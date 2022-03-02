@@ -12,6 +12,7 @@ import math
 import subprocess  # to run the TRNSYS simulation
 import pandas as pd
 
+DATA_PATH= "C:\\Users\\Harold\\Desktop\\ENAC-Semester-Project\\DIET_Controller\\"
 
 # Initializing the Experience Replay Memory
 class ReplayBuffer(object):
@@ -117,7 +118,6 @@ class DDPG(object):
             # Step 5: From the next state s', the Actor target plays the next action a'
             next_action = self.actor_target(next_state)
             print(next_action.size())
-            break
 
             # Step 6: We add Gaussian noise to this next action a' and we clamp it in a range of values supported
             # by the environment
@@ -176,7 +176,7 @@ def evaluate_policy(eval_episodes=1):
         obs = np.array([20.0, 50.0, 20.0, 0.1, 5.5, 1.0, 1.0, 0.0001, 0.0001, 0.0])
 
         # Store the first observations in the text file
-        state_txt = open(r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\py_state.dat", "w")
+        state_txt = open(DATA_PATH + "py_state.dat", "w")
         state_txt.truncate(0)
         state_txt.write('\t' + str(obs[0]) + '\t' + str(obs[1]) + '\t' + str(obs[2]) + '\t' + str(obs[3]) + '\t' +
                         str(obs[4]) + '\t' + str(obs[5]) + '\t' + str(obs[6]) + '\t' + str(obs[7]) + '\t' +
@@ -184,29 +184,29 @@ def evaluate_policy(eval_episodes=1):
         state_txt.close()
 
         # Erase the data from the previous episodes
-        next_state_txt = open(r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\py_next_state.dat", "w")
+        next_state_txt = open(DATA_PATH + "py_next_state.dat", "w")
         next_state_txt.truncate(0)
         next_state_txt.close()
 
-        action_txt = open(r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\py_action.dat", "w")
+        action_txt = open(DATA_PATH + "py_action.dat", "w")
         action_txt.truncate(0)
         action_txt.close()
 
-        reward_txt = open(r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\py_reward.dat", "w")
+        reward_txt = open(DATA_PATH + "py_reward.dat", "w")
         reward_txt.truncate(0)
         reward_txt.close()
 
-        pmv_txt = open(r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\py_pmv.dat", "w")
+        pmv_txt = open(DATA_PATH + "py_pmv.dat", "w")
         pmv_txt.truncate(0)
         pmv_txt.close()
 
         # Running TRNSYS simulation
         subprocess.run([r"C:\TRNSYS18\Exe\TrnEXE64.exe",
-                        r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\BuildingModel_1day.dck"])
+                        DATA_PATH + "BuildingModel_1day.dck"])
 
         # Reading the reward from text file and calculating the episode reward
         reward_data = pd.read_csv(
-            r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\Backup\7\Training\py_reward.dat",
+            DATA_PATH + "Backup\7\Training\py_reward.dat",
             sep="\s+", usecols=[0], names=[0], skiprows=2)
         avg_reward += reward_data[0].sum
 
@@ -255,100 +255,7 @@ evaluations = []
 
 
 # Function taken from CBE comfort tool to calculate the pmv value for comfort evaluation
-def comfPMV(ta, tr, vel, rh, met, clo, wme=0):
-    pa = rh * 10 * math.exp(16.6536 - 4030.183 / (ta + 235))
-
-    icl = 0.155 * clo  # thermal insulation of the clothing in M2K/W
-    m = met * 58.15  # metabolic rate in W/M2
-    w = wme * 58.15  # external work in W/M2
-    mw = m - w  # internal heat production in the human body
-    if icl <= 0.078:
-        fcl = 1 + (1.29 * icl)
-    else:
-        fcl = 1.05 + (0.645 * icl)
-
-    # heat transfer coefficient by forced convection
-    hcf = 12.1 * math.sqrt(vel)
-    taa = ta + 273
-    tra = tr + 273
-    # we have verified that using the equation below or this tcla = taa + (35.5 - ta) / (3.5 * (6.45 * icl + .1))
-    # does not affect the PMV value
-    tcla = taa + (35.5 - ta) / (3.5 * icl + 0.1)
-
-    p1 = icl * fcl
-    p2 = p1 * 3.96
-    p3 = p1 * 100
-    p4 = p1 * taa
-    p5 = (308.7 - 0.028 * mw) + (p2 * math.pow(tra / 100.0, 4))
-    xn = tcla / 100
-    xf = tcla / 50
-    eps = 0.00015
-
-    n = 0
-    while abs(xn - xf) > eps:
-        xf = (xf + xn) / 2
-        hcn = 2.38 * math.pow(abs(100.0 * xf - taa), 0.25)
-        if hcf > hcn:
-            hc = hcf
-        else:
-            hc = hcn
-        xn = (p5 + p4 * hc - p2 * math.pow(xf, 4)) / (100 + p3 * hc)
-        n += 1
-        if n > 150:
-            print('Max iterations exceeded')
-            return 1  # fixme should not return 1 but instead PMV=999 as per ashrae standard
-
-    tcl = 100 * xn - 273
-
-    # heat loss diff. through skin
-    hl1 = 3.05 * 0.001 * (5733 - (6.99 * mw) - pa)
-    # heat loss by sweating
-    if mw > 58.15:
-        hl2 = 0.42 * (mw - 58.15)
-    else:
-        hl2 = 0
-    # latent respiration heat loss
-    hl3 = 1.7 * 0.00001 * m * (5867 - pa)
-    # dry respiration heat loss
-    hl4 = 0.0014 * m * (34 - ta)
-    # heat loss by radiation
-    hl5 = 3.96 * fcl * (math.pow(xn, 4) - math.pow(tra / 100.0, 4))
-    # heat loss by convection
-    hl6 = fcl * hc * (tcl - ta)
-
-    ts = 0.303 * math.exp(-0.036 * m) + 0.028
-    pmv = ts * (mw - hl1 - hl2 - hl3 - hl4 - hl5 - hl6)
-    ppd = 100.0 - 95.0 * math.exp(-0.03353 * pow(pmv, 4.0) - 0.2179 * pow(pmv, 2.0))
-
-    return pmv
-
-
-def trnsys_sim(tair_in, rh_in, tmrt_in, vair_in, tout_in, clo_in, met_in, occ_in, qheat_in):
-    global obs
-    # Retrieve values from the parameters and inputs from Trnsys
-
-    # Calculate the values of the new actions
-    if sim_num < start_sim:
-        action = round(random.uniform(16, 21), 1)  # Choosing random values between 16 and 24 deg
-    else:  # After 2 episodes, we switch to the model
-        action_arr = policy.select_action(obs)
-        # If the explore_noise parameter is not 0, we add noise to the action and we clip it
-        if expl_noise != 0:
-            action_arr = (action_arr + np.random.normal(0, expl_noise, size=1)).clip(16.0, 21.0)
-            action = action_arr[0]
-
-    # The agent performs the action in the environment, then reaches the next state and receives the reward
-    new_obs = np.array([tair_in, rh_in, tmrt_in, vair_in, tout_in, clo_in, met_in, occ_in, qheat_in])
-
-    pmv = comfPMV(tair_in, tmrt_in, vair_in, rh_in, met_in, clo_in)
-
-    reward = beta * (1 - (qheat_in/15000)) + alpha * (1 - ((pmv + 0.5) ** 2)) * occ_in
-
-    obs = new_obs
-
-    # Step 6: Return the new values based on which action will be performed in Trnsys
-    return action, reward, pmv
-
+ 
 
 def run_training():
     global sim_num
@@ -369,50 +276,51 @@ def run_training():
             np.save("./results/%s" % file_name, evaluations)
 
         # We reset the state of the environment [Tair, RHair, Tmrt, Vair, Tout, Clo, Met, Occ, Qheat, HOY]
-        obs = np.array([20.0, 50.0, 20.0, 0.1, 5.5, 1.0, 1.0, 0.0001, 0.0001])
+        obs = [20.0, 50.0, 20.0, 0.1, 5.5, 1.0, 1.0, 0.0001, 0.0001]
 
         # Store the first observations in the text file
-        state_txt = open(r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\py_state.dat", "w")
+        state_txt = open(DATA_PATH + "py_state.dat", "w")
         state_txt.truncate(0)
         state_txt.write('\t' + str(obs[0]) + '\t' + str(obs[1]) + '\t' + str(obs[2]) + '\t' + str(obs[3]) + '\t' +
                         str(obs[4]) + '\t' + str(obs[5]) + '\t' + str(obs[6]) + '\t' + str(obs[7]) + '\t' +
                         str(obs[8]) + '\n')
+
         state_txt.close()
 
         # Erase the data from the previous episodes
-        next_state_txt = open(r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\py_next_state.dat", "w")
+        next_state_txt = open(DATA_PATH + "py_next_state.dat", "w")
         next_state_txt.truncate(0)
         next_state_txt.close()
 
-        action_txt = open(r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\py_action.dat", "w")
+        action_txt = open(DATA_PATH + "py_action.dat", "w")
         action_txt.truncate(0)
         action_txt.close()
 
-        reward_txt = open(r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\py_reward.dat", "w")
+        reward_txt = open(DATA_PATH + "py_reward.dat", "w")
         reward_txt.truncate(0)
         reward_txt.close()
 
-        pmv_txt = open(r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\py_pmv.dat", "w")
+        pmv_txt = open(DATA_PATH + "py_pmv.dat", "w")
         pmv_txt.truncate(0)
         pmv_txt.close()
 
         # Running TRNSYS simulation
         subprocess.run([r"C:\TRNSYS18\Exe\TrnEXE64.exe",
-                        r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\BuildingModel_2day.dck"])
+                        DATA_PATH + "BuildingModel_2day.dck"])
 
         # Reading from the text files to fill the replay buffer
         state_data = pd.read_csv(
-            r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\Backup\7\Training\py_state.dat",
+            DATA_PATH + "Backup\7\Training\py_state.dat",
             sep="\s+", usecols=[0, 1, 2, 3, 4, 5, 6, 7, 8], names=[0, 1, 2, 3, 4, 5, 6, 7, 8],
             skiprows=2, skipfooter=1)
         next_state_data = pd.read_csv(
-            r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\Backup\7\Training\py_next_state.dat", sep="\s+",
+            DATA_PATH + "Backup\7\Training\py_next_state.dat", sep="\s+",
             usecols=[0, 1, 2, 3, 4, 5, 6, 7, 8], names=[0, 1, 2, 3, 4, 5, 6, 7, 8], skiprows=2)
         action_data = pd.read_csv(
-            r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\Backup\7\Training\py_action.dat",
+            DATA_PATH + "Backup\7\Training\py_action.dat",
             sep="\s+", usecols=[0], names=[0], skiprows=2)
         reward_data = pd.read_csv(
-            r"C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\Backup\7\Training\py_reward.dat",
+            DATA_PATH + "Backup\7\Training\py_reward.dat",
             sep="\s+", usecols=[0], names=[0], skiprows=2)
 
         for ind in range(action_data.size):
