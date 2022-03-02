@@ -12,6 +12,9 @@ import math
 import subprocess  # to run the TRNSYS simulation
 import pandas as pd
 
+from utils import *
+
+
 DATA_PATH= "C:\\Users\\Harold\\Desktop\\ENAC-Semester-Project\\DIET_Controller\\"
 
 # Initializing the Experience Replay Memory

@@ -27,37 +27,6 @@ class State():
         }
 
 
-def trnsys_sim(state:State, experiment_parameters):
-    global obs
-    # Retrieve values from the parameters and inputs from Trnsys
-
-    # Calculate the values of the new actions
-    if sim_num < start_sim:
-        action = round(random.uniform(16, 21), 1)  # Choosing random values between 16 and 24 deg
-    else:  # After 2 episodes, we switch to the model
-        action_arr = policy.select_action(obs)
-        # If the explore_noise parameter is not 0, we add noise to the action and we clip it
-        if expl_noise != 0:
-            action_arr = (action_arr + np.random.normal(0, expl_noise, size=1)).clip(16.0, 21.0)
-            action = action_arr[0]
-
-    # The agent performs the action in the environment, then reaches the next state and receives the reward
-    new_obs = np.array(state.parameters)
-
-    pmv = comfPMV(state)
-
-    qheat_in = state.dict_values["qheat_in"]
-    occ_in = state.dict_values["occ_in"]
-
-    reward = beta * (1 - (qheat_in/15000)) + alpha * (1 - ((pmv + 0.5) ** 2)) * occ_in
-
-    obs = new_obs
-
-    # Step 6: Return the new values based on which action will be performed in Trnsys
-    return action, reward, pmv
-
-
-
 def comfPMV(state:State):
 
     ta = state.dict_values["tair_in"]
