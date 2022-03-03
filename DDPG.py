@@ -209,7 +209,7 @@ def evaluate_policy(eval_episodes=1):
 
         # Reading the reward from text file and calculating the episode reward
         reward_data = pd.read_csv(
-            DATA_PATH + "Backup\7\Training\py_reward.dat",
+            DATA_PATH + r"Backup\7\Training\py_reward.dat",
             sep="\s+", usecols=[0], names=[0], skiprows=2)
         avg_reward += reward_data[0].sum
 
@@ -313,17 +313,17 @@ def run_training():
 
         # Reading from the text files to fill the replay buffer
         state_data = pd.read_csv(
-            DATA_PATH + "Backup\7\Training\py_state.dat",
+            DATA_PATH + r"Backup\7\Training\py_state.dat",
             sep="\s+", usecols=[0, 1, 2, 3, 4, 5, 6, 7, 8], names=[0, 1, 2, 3, 4, 5, 6, 7, 8],
             skiprows=2, skipfooter=1)
         next_state_data = pd.read_csv(
-            DATA_PATH + "Backup\7\Training\py_next_state.dat", sep="\s+",
+            DATA_PATH + r"Backup\7\Training\py_next_state.dat", sep="\s+",
             usecols=[0, 1, 2, 3, 4, 5, 6, 7, 8], names=[0, 1, 2, 3, 4, 5, 6, 7, 8], skiprows=2)
         action_data = pd.read_csv(
-            DATA_PATH + "Backup\7\Training\py_action.dat",
+            DATA_PATH + r"Backup\7\Training\py_action.dat",
             sep="\s+", usecols=[0], names=[0], skiprows=2)
         reward_data = pd.read_csv(
-            DATA_PATH + "Backup\7\Training\py_reward.dat",
+            DATA_PATH + r"Backup\7\Training\py_reward.dat",
             sep="\s+", usecols=[0], names=[0], skiprows=2)
 
         for ind in range(action_data.size):
