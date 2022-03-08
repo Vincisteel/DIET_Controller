@@ -80,13 +80,21 @@ class TrnsysEnv(gym.Env):
 
 
 
-    def reset(self) -> Box:
+    def reset(self,seed=None) -> Box:
         """
         Resets the environment to an initial state and returns an initial observation.
 
         Returns:
             np.array: Element of self.observation_space, representing the HVAC environment dynamics
         """
+        ## seeding
+        if seed is None:
+            seed=42
+
+        self.observation_space.seed(seed)
+        self.action_space.seed(seed)
+
+        ## resetting
         self.curr_obs = self.default_obs
 
         return self.curr_obs
