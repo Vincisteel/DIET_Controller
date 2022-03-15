@@ -71,8 +71,8 @@ class Critic(nn.Module):
 
     def forward(self, x, u):
         xu = torch.cat([x, u], 1)
-        print(xu.size())
-        print(x.size(), u.size())
+        #print(xu.size())
+        #print(x.size(), u.size())
         x1 = F.relu(self.layer_1(xu))
         x1 = F.relu(self.layer_2(x1))
         x1 = self.layer_3(x1)
@@ -81,6 +81,7 @@ class Critic(nn.Module):
 
 # Selecting the device (CPU or GPU)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = "cpu"
 
 
 # Building the whole DDPG Training Process into a class
@@ -108,27 +109,32 @@ class DDPG(object):
 
         for it in range(iterations):
 
+            
+
             # Step 4: We sample a batch of transitions (s, s', a, r) from the memory
             batch_states, batch_next_states, batch_actions, batch_rewards = replay_buffer.sample(
                 batch_size)
             state = torch.Tensor(batch_states).to(device)
-            next_state = torch.Tensor(batch_next_states).to(device)
+            next_state = torch.Tensor(batch_next_states).to(device) 
+            next_state = (next_state - next_state.mean())/next_state.std()
             action = torch.Tensor(batch_actions).to(device)
             reward = torch.Tensor(batch_rewards).to(device)
 
             # Step 5: From the next state s', the Actor target plays the next action a'
             next_action = self.actor_target(next_state)
-            print(next_action.size())
-            break
+            #print(next_action.size())
 
             # Step 6: We add Gaussian noise to this next action a' and we clamp it in a range of values supported
             # by the environment
             noise = torch.Tensor(batch_actions).data.normal_(0, policy_noise).to(device)
             noise = noise.clamp(-noise_clip, noise_clip)
-            next_action = (next_action + noise).clamp(-self.max_action, self.max_action)
+            next_action = (next_action + noise).clamp(12, self.max_action)
 
             # Step 7: The Critic Target take (s', a') as input and return Q-value Qt(s', a') as output
             target_q = self.critic_target(next_state, next_action)
+            
+            if it%100 == 0:
+                print(f"Training iterations {it}")
 
             # Step 8: We get the estimated reward, which is: r' = r + γ * Qt, where γ id the discount factor
             target_q = reward + (discount * target_q).detach()
@@ -186,10 +192,14 @@ hours = 24  # Number of hours each day the simulation is run for
 minutes = 60
 seconds = 60
 ep_timestep = 6  # Number of timesteps per hour
+num_random_episodes = 1
+num_total_episodes = 3
 numsteps = days * hours * ep_timestep
 timestop = days * hours * minutes * seconds
 secondstep = timestop / numsteps
 comfort_lim = 0
+min_temp=12
+max_temp=30
 
 # We create a filename for the two saved models: the Actor and Critic Models
 file_name = "%s_%s" % ("DDPG", "DIET")
@@ -278,9 +288,12 @@ def comfPMV(ta, tr, rh, vel=0.1, met=1.1, clo=1, wme=0):
     return pmv
 
 
-os.chdir(r'C:\Users\achatter\Desktop\PhDResearch\DIET\Controller\Cosimulation_energyplus')
+os.chdir(r'C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller')
 
-for sim_num in range(15):
+TRAIN_PATH = "./Training_Data/01032022/Ep"
+MODEL_PATH = "./pytorch_models/01032022"
+
+for sim_num in range(num_total_episodes):
 
     model = load_fmu(modelname + '.fmu')
     opts = model.simulate_options()  # Get the default options
@@ -304,21 +317,24 @@ for sim_num in range(15):
 
     if sim_num != 0:
         print("Total timesteps: {} Episode Num: {} Reward: {}".format(numsteps, sim_num, np.sum(reward.flatten())))
-        policy.train(replay_buffer, (numsteps - 1) * sim_num, batch_size, discount, tau, policy_noise, noise_clip)
+        iterations = (numsteps - 1) * sim_num
+        policy.train(replay_buffer,1000 , batch_size, discount, tau, policy_noise, noise_clip)
 
         if sim_num > 1:
-            policy.save(file_name, directory="./pytorch_models/01032022")  # Change the folder name here
+            policy.save(file_name, directory=MODEL_PATH)  # Change the folder name here
 
     while simtime < timestop:
 
-        if sim_num < 6:
-            action[index] = round(random.uniform(12, 30), 1)  # Choosing random values between 12 and 30 deg
+        if sim_num < num_random_episodes:
+            action[index] = round(random.uniform(min_temp, max_temp), 1)  # Choosing random values between 12 and 30 deg
 
         else:  # After 1 episode, we switch to the model
             action_arr = policy.select_action(obs)
+            #print(f"Current obs {obs}")
+            #print(f"Selected action is {action_arr[0]}")
             # If the explore_noise parameter is not 0, we add noise to the action and we clip it
             if expl_noise != 0:
-                action_arr = (action_arr + np.random.normal(0, expl_noise, size=1)).clip(12.0, 30.0)
+                action_arr = (action_arr + np.random.normal(0, expl_noise, size=1)).clip(min_temp, max_temp)
                 action[index] = action_arr[0]
 
         model.set('Thsetpoint_diet', action[index])
@@ -340,13 +356,13 @@ for sim_num in range(15):
 
         simtime += secondstep
         index += 1
-
+    os.makedirs(TRAIN_PATH+str(sim_num+1), exist_ok=True)
     # Writing to .csv files to save the data from the episode
-    np.savetxt("./Training_Data/01032022/Ep"+str(sim_num+1)+"/state.csv", state[:-1, :], delimiter=",")
-    np.savetxt("./Training_Data/01032022/Ep"+str(sim_num+1)+"/next_state.csv", state[1:, :], delimiter=",")
-    np.savetxt("./Training_Data/01032022/Ep"+str(sim_num+1)+"/action.csv", action[1:, :], delimiter=",")
-    np.savetxt("./Training_Data/01032022/Ep"+str(sim_num+1)+"/reward.csv", reward[1:, :], delimiter=",")
-    np.savetxt("./Training_Data/01032022/Ep"+str(sim_num+1)+"/pmv.csv", pmv[1:, :], delimiter=",")
+    np.savetxt(TRAIN_PATH+str(sim_num+1)+"/state.csv", state[:-1, :], delimiter=",")
+    np.savetxt(TRAIN_PATH+str(sim_num+1)+"/next_state.csv", state[1:, :], delimiter=",")
+    np.savetxt(TRAIN_PATH+str(sim_num+1)+"/action.csv", action[1:, :], delimiter=",")
+    np.savetxt(TRAIN_PATH+str(sim_num+1)+"/reward.csv", reward[1:, :], delimiter=",")
+    np.savetxt(TRAIN_PATH+str(sim_num+1)+"/pmv.csv", pmv[1:, :], delimiter=",")
 
     # Plotting the summary of simulation
     fig = make_subplots(rows=6, cols=1, shared_xaxes=True, vertical_spacing=0.04,
@@ -395,8 +411,8 @@ for sim_num in range(15):
     fig.update_layout(template='plotly_white', font=dict(family="Courier New, monospace", size=12),
                       legend=dict(orientation="h", yanchor="bottom", y=1, xanchor="right", x=1))
 
-    pyo.plot(fig, filename="./Training_Data/01032022/Ep"+str(sim_num+1)+"/results.html")
+    pyo.plot(fig, filename=TRAIN_PATH+str(sim_num+1)+"/results.html")
 
     del model, opts
 
-policy.save(file_name, directory="./pytorch_models/01032022")  # Change the folder name here
+policy.save(file_name, directory=MODEL_PATH)  # Change the folder name here
