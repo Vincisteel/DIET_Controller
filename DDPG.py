@@ -288,10 +288,10 @@ def comfPMV(ta, tr, rh, vel=0.1, met=1.1, clo=1, wme=0):
     return pmv
 
 
-os.chdir(r'C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller')
+os.chdir(r'C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\Eplus_simulation')
 
-TRAIN_PATH = "./Training_Data/01032022/Ep"
-MODEL_PATH = "./pytorch_models/01032022"
+TRAIN_PATH = "../Training_Data/01032022/Ep"
+MODEL_PATH = "../pytorch_models/01032022"
 
 for sim_num in range(num_total_episodes):
 

@@ -1,9 +1,0 @@
-*** BCVTB client log file.
-*************************.
-Writing to socket at time = 0.000000e+00
-Assembling buffer.
-Write to socket with fd = 744
-Buffer        = 2 0 6 0 0 0.000000000000000e+00 7.399134967232579e+00 4.106073962571010e+01 8.009211662715511e+00 -3.409424993401317e+00 0.000000000000000e+00 0.000000000000000e+00 
-
-Wrote 166 characters to socket.
-Reading from socket.
