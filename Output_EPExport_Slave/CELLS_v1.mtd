@@ -1,5 +1,5 @@
 
- Meters for 9,CELLS:ROOMX1:Lights Electric Energy [J]
+ Meters for 9,CELLS:ROOMX1:Lights Electricity Energy [J]
   OnMeter=Electricity:Facility [J]
   OnMeter=Electricity:Building [J]
   OnMeter=Electricity:Zone:CELLS:ROOMX1 [J]
@@ -7,7 +7,7 @@
   OnMeter=InteriorLights:Electricity:Zone:CELLS:ROOMX1 [J]
   OnMeter=General:InteriorLights:Electricity [J]
 
- Meters for 82,CELLS:ENTRANCE:Lights Electric Energy [J]
+ Meters for 82,CELLS:ENTRANCE:Lights Electricity Energy [J]
   OnMeter=Electricity:Facility [J]
   OnMeter=Electricity:Building [J]
   OnMeter=Electricity:Zone:CELLS:ENTRANCE [J]
@@ -15,7 +15,7 @@
   OnMeter=InteriorLights:Electricity:Zone:CELLS:ENTRANCE [J]
   OnMeter=General:InteriorLights:Electricity [J]
 
- Meters for 107,CELLS:ROOMX2:Lights Electric Energy [J]
+ Meters for 107,CELLS:ROOMX2:Lights Electricity Energy [J]
   OnMeter=Electricity:Facility [J]
   OnMeter=Electricity:Building [J]
   OnMeter=Electricity:Zone:CELLS:ROOMX2 [J]
@@ -23,7 +23,7 @@
   OnMeter=InteriorLights:Electricity:Zone:CELLS:ROOMX2 [J]
   OnMeter=General:InteriorLights:Electricity [J]
 
- Meters for 132,CELLS:ROOMX1 EQUIPMENT GAIN 1:Other Equipment Electric Energy [J]
+ Meters for 132,CELLS:ROOMX1 EQUIPMENT GAIN 1:Other Equipment Electricity Energy [J]
   OnMeter=Electricity:Facility [J]
   OnMeter=Electricity:Building [J]
   OnMeter=Electricity:Zone:CELLS:ROOMX1 [J]
@@ -31,7 +31,7 @@
   OnMeter=InteriorEquipment:Electricity:Zone:CELLS:ROOMX1 [J]
   OnMeter=General:InteriorEquipment:Electricity [J]
 
- Meters for 169,CELLS:ENTRANCE EQUIPMENT GAIN 1:Other Equipment Electric Energy [J]
+ Meters for 169,CELLS:ENTRANCE EQUIPMENT GAIN 1:Other Equipment Electricity Energy [J]
   OnMeter=Electricity:Facility [J]
   OnMeter=Electricity:Building [J]
   OnMeter=Electricity:Zone:CELLS:ENTRANCE [J]
@@ -39,7 +39,7 @@
   OnMeter=InteriorEquipment:Electricity:Zone:CELLS:ENTRANCE [J]
   OnMeter=General:InteriorEquipment:Electricity [J]
 
- Meters for 182,CELLS:ROOMX2 EQUIPMENT GAIN 1:Other Equipment Electric Energy [J]
+ Meters for 182,CELLS:ROOMX2 EQUIPMENT GAIN 1:Other Equipment Electricity Energy [J]
   OnMeter=Electricity:Facility [J]
   OnMeter=Electricity:Building [J]
   OnMeter=Electricity:Zone:CELLS:ROOMX2 [J]
@@ -47,7 +47,7 @@
   OnMeter=InteriorEquipment:Electricity:Zone:CELLS:ROOMX2 [J]
   OnMeter=General:InteriorEquipment:Electricity [J]
 
- Meters for 197,CELLS:ROOMX1:Zone Ventilation Fan Electric Energy [J]
+ Meters for 197,CELLS:ROOMX1:Zone Ventilation Fan Electricity Energy [J]
   OnMeter=Electricity:Facility [J]
   OnMeter=Electricity:Building [J]
   OnMeter=Electricity:Zone:CELLS:ROOMX1 [J]
@@ -55,7 +55,7 @@
   OnMeter=Fans:Electricity:Zone:CELLS:ROOMX1 [J]
   OnMeter=Ventilation (simple):Fans:Electricity [J]
 
- Meters for 234,CELLS:ENTRANCE:Zone Ventilation Fan Electric Energy [J]
+ Meters for 234,CELLS:ENTRANCE:Zone Ventilation Fan Electricity Energy [J]
   OnMeter=Electricity:Facility [J]
   OnMeter=Electricity:Building [J]
   OnMeter=Electricity:Zone:CELLS:ENTRANCE [J]
@@ -63,7 +63,7 @@
   OnMeter=Fans:Electricity:Zone:CELLS:ENTRANCE [J]
   OnMeter=Ventilation (simple):Fans:Electricity [J]
 
- Meters for 247,CELLS:ROOMX2:Zone Ventilation Fan Electric Energy [J]
+ Meters for 247,CELLS:ROOMX2:Zone Ventilation Fan Electricity Energy [J]
   OnMeter=Electricity:Facility [J]
   OnMeter=Electricity:Building [J]
   OnMeter=Electricity:Zone:CELLS:ROOMX2 [J]
@@ -119,19 +119,19 @@
   OnMeter=Cooling:EnergyTransfer:Zone:CELLS:ROOMX2 [J]
   OnMeter=General:Cooling:EnergyTransfer [J]
 
- Meters for 447,Whole Building:Facility Total Purchased Electric Energy [J]
+ Meters for 447,Whole Building:Facility Total Purchased Electricity Energy [J]
   OnMeter=ElectricityPurchased:Facility [J]
   OnMeter=ElectricityPurchased:Plant [J]
   OnMeter=Cogeneration:ElectricityPurchased [J]
   OnMeter=General:Cogeneration:ElectricityPurchased [J]
 
- Meters for 496,Whole Building:Facility Total Surplus Electric Energy [J]
+ Meters for 496,Whole Building:Facility Total Surplus Electricity Energy [J]
   OnMeter=ElectricitySurplusSold:Facility [J]
   OnMeter=ElectricitySurplusSold:Plant [J]
   OnMeter=Cogeneration:ElectricitySurplusSold [J]
   OnMeter=General:Cogeneration:ElectricitySurplusSold [J]
 
- Meters for 545,Whole Building:Facility Net Purchased Electric Energy [J]
+ Meters for 545,Whole Building:Facility Net Purchased Electricity Energy [J]
   OnMeter=ElectricityNet:Facility [J]
   OnMeter=ElectricityNet:Plant [J]
   OnMeter=Cogeneration:ElectricityNet [J]
@@ -186,98 +186,98 @@
   OnMeter=CarbonEquivalentEmissions:Carbon Equivalent [kg]
 
  For Meter=Electricity:Facility [J], ResourceType=Electricity, contents are:
-  CELLS:ROOMX1:Lights Electric Energy
-  CELLS:ENTRANCE:Lights Electric Energy
-  CELLS:ROOMX2:Lights Electric Energy
-  CELLS:ROOMX1 EQUIPMENT GAIN 1:Other Equipment Electric Energy
-  CELLS:ENTRANCE EQUIPMENT GAIN 1:Other Equipment Electric Energy
-  CELLS:ROOMX2 EQUIPMENT GAIN 1:Other Equipment Electric Energy
-  CELLS:ROOMX1:Zone Ventilation Fan Electric Energy
-  CELLS:ENTRANCE:Zone Ventilation Fan Electric Energy
-  CELLS:ROOMX2:Zone Ventilation Fan Electric Energy
+  CELLS:ROOMX1:Lights Electricity Energy
+  CELLS:ENTRANCE:Lights Electricity Energy
+  CELLS:ROOMX2:Lights Electricity Energy
+  CELLS:ROOMX1 EQUIPMENT GAIN 1:Other Equipment Electricity Energy
+  CELLS:ENTRANCE EQUIPMENT GAIN 1:Other Equipment Electricity Energy
+  CELLS:ROOMX2 EQUIPMENT GAIN 1:Other Equipment Electricity Energy
+  CELLS:ROOMX1:Zone Ventilation Fan Electricity Energy
+  CELLS:ENTRANCE:Zone Ventilation Fan Electricity Energy
+  CELLS:ROOMX2:Zone Ventilation Fan Electricity Energy
 
  For Meter=Electricity:Building [J], ResourceType=Electricity, Group=Building, contents are:
-  CELLS:ROOMX1:Lights Electric Energy
-  CELLS:ENTRANCE:Lights Electric Energy
-  CELLS:ROOMX2:Lights Electric Energy
-  CELLS:ROOMX1 EQUIPMENT GAIN 1:Other Equipment Electric Energy
-  CELLS:ENTRANCE EQUIPMENT GAIN 1:Other Equipment Electric Energy
-  CELLS:ROOMX2 EQUIPMENT GAIN 1:Other Equipment Electric Energy
-  CELLS:ROOMX1:Zone Ventilation Fan Electric Energy
-  CELLS:ENTRANCE:Zone Ventilation Fan Electric Energy
-  CELLS:ROOMX2:Zone Ventilation Fan Electric Energy
+  CELLS:ROOMX1:Lights Electricity Energy
+  CELLS:ENTRANCE:Lights Electricity Energy
+  CELLS:ROOMX2:Lights Electricity Energy
+  CELLS:ROOMX1 EQUIPMENT GAIN 1:Other Equipment Electricity Energy
+  CELLS:ENTRANCE EQUIPMENT GAIN 1:Other Equipment Electricity Energy
+  CELLS:ROOMX2 EQUIPMENT GAIN 1:Other Equipment Electricity Energy
+  CELLS:ROOMX1:Zone Ventilation Fan Electricity Energy
+  CELLS:ENTRANCE:Zone Ventilation Fan Electricity Energy
+  CELLS:ROOMX2:Zone Ventilation Fan Electricity Energy
 
  For Meter=Electricity:Zone:CELLS:ROOMX1 [J], ResourceType=Electricity, Group=Zone, contents are:
-  CELLS:ROOMX1:Lights Electric Energy
-  CELLS:ROOMX1 EQUIPMENT GAIN 1:Other Equipment Electric Energy
-  CELLS:ROOMX1:Zone Ventilation Fan Electric Energy
+  CELLS:ROOMX1:Lights Electricity Energy
+  CELLS:ROOMX1 EQUIPMENT GAIN 1:Other Equipment Electricity Energy
+  CELLS:ROOMX1:Zone Ventilation Fan Electricity Energy
 
  For Meter=InteriorLights:Electricity [J], ResourceType=Electricity, EndUse=InteriorLights, contents are:
-  CELLS:ROOMX1:Lights Electric Energy
-  CELLS:ENTRANCE:Lights Electric Energy
-  CELLS:ROOMX2:Lights Electric Energy
+  CELLS:ROOMX1:Lights Electricity Energy
+  CELLS:ENTRANCE:Lights Electricity Energy
+  CELLS:ROOMX2:Lights Electricity Energy
 
  For Meter=InteriorLights:Electricity:Zone:CELLS:ROOMX1 [J], ResourceType=Electricity, EndUse=InteriorLights, Group=Zone, contents are:
-  CELLS:ROOMX1:Lights Electric Energy
+  CELLS:ROOMX1:Lights Electricity Energy
 
  For Meter=General:InteriorLights:Electricity [J], ResourceType=Electricity, EndUse=InteriorLights, contents are:
-  CELLS:ROOMX1:Lights Electric Energy
-  CELLS:ENTRANCE:Lights Electric Energy
-  CELLS:ROOMX2:Lights Electric Energy
+  CELLS:ROOMX1:Lights Electricity Energy
+  CELLS:ENTRANCE:Lights Electricity Energy
+  CELLS:ROOMX2:Lights Electricity Energy
 
  For Meter=Electricity:Zone:CELLS:ENTRANCE [J], ResourceType=Electricity, Group=Zone, contents are:
-  CELLS:ENTRANCE:Lights Electric Energy
-  CELLS:ENTRANCE EQUIPMENT GAIN 1:Other Equipment Electric Energy
-  CELLS:ENTRANCE:Zone Ventilation Fan Electric Energy
+  CELLS:ENTRANCE:Lights Electricity Energy
+  CELLS:ENTRANCE EQUIPMENT GAIN 1:Other Equipment Electricity Energy
+  CELLS:ENTRANCE:Zone Ventilation Fan Electricity Energy
 
  For Meter=InteriorLights:Electricity:Zone:CELLS:ENTRANCE [J], ResourceType=Electricity, EndUse=InteriorLights, Group=Zone, contents are:
-  CELLS:ENTRANCE:Lights Electric Energy
+  CELLS:ENTRANCE:Lights Electricity Energy
 
  For Meter=Electricity:Zone:CELLS:ROOMX2 [J], ResourceType=Electricity, Group=Zone, contents are:
-  CELLS:ROOMX2:Lights Electric Energy
-  CELLS:ROOMX2 EQUIPMENT GAIN 1:Other Equipment Electric Energy
-  CELLS:ROOMX2:Zone Ventilation Fan Electric Energy
+  CELLS:ROOMX2:Lights Electricity Energy
+  CELLS:ROOMX2 EQUIPMENT GAIN 1:Other Equipment Electricity Energy
+  CELLS:ROOMX2:Zone Ventilation Fan Electricity Energy
 
  For Meter=InteriorLights:Electricity:Zone:CELLS:ROOMX2 [J], ResourceType=Electricity, EndUse=InteriorLights, Group=Zone, contents are:
-  CELLS:ROOMX2:Lights Electric Energy
+  CELLS:ROOMX2:Lights Electricity Energy
 
  For Meter=InteriorEquipment:Electricity [J], ResourceType=Electricity, EndUse=InteriorEquipment, contents are:
-  CELLS:ROOMX1 EQUIPMENT GAIN 1:Other Equipment Electric Energy
-  CELLS:ENTRANCE EQUIPMENT GAIN 1:Other Equipment Electric Energy
-  CELLS:ROOMX2 EQUIPMENT GAIN 1:Other Equipment Electric Energy
+  CELLS:ROOMX1 EQUIPMENT GAIN 1:Other Equipment Electricity Energy
+  CELLS:ENTRANCE EQUIPMENT GAIN 1:Other Equipment Electricity Energy
+  CELLS:ROOMX2 EQUIPMENT GAIN 1:Other Equipment Electricity Energy
 
  For Meter=InteriorEquipment:Electricity:Zone:CELLS:ROOMX1 [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=Zone, contents are:
-  CELLS:ROOMX1 EQUIPMENT GAIN 1:Other Equipment Electric Energy
+  CELLS:ROOMX1 EQUIPMENT GAIN 1:Other Equipment Electricity Energy
 
  For Meter=General:InteriorEquipment:Electricity [J], ResourceType=Electricity, EndUse=InteriorEquipment, contents are:
-  CELLS:ROOMX1 EQUIPMENT GAIN 1:Other Equipment Electric Energy
-  CELLS:ENTRANCE EQUIPMENT GAIN 1:Other Equipment Electric Energy
-  CELLS:ROOMX2 EQUIPMENT GAIN 1:Other Equipment Electric Energy
+  CELLS:ROOMX1 EQUIPMENT GAIN 1:Other Equipment Electricity Energy
+  CELLS:ENTRANCE EQUIPMENT GAIN 1:Other Equipment Electricity Energy
+  CELLS:ROOMX2 EQUIPMENT GAIN 1:Other Equipment Electricity Energy
 
  For Meter=InteriorEquipment:Electricity:Zone:CELLS:ENTRANCE [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=Zone, contents are:
-  CELLS:ENTRANCE EQUIPMENT GAIN 1:Other Equipment Electric Energy
+  CELLS:ENTRANCE EQUIPMENT GAIN 1:Other Equipment Electricity Energy
 
  For Meter=InteriorEquipment:Electricity:Zone:CELLS:ROOMX2 [J], ResourceType=Electricity, EndUse=InteriorEquipment, Group=Zone, contents are:
-  CELLS:ROOMX2 EQUIPMENT GAIN 1:Other Equipment Electric Energy
+  CELLS:ROOMX2 EQUIPMENT GAIN 1:Other Equipment Electricity Energy
 
  For Meter=Fans:Electricity [J], ResourceType=Electricity, EndUse=Fans, contents are:
-  CELLS:ROOMX1:Zone Ventilation Fan Electric Energy
-  CELLS:ENTRANCE:Zone Ventilation Fan Electric Energy
-  CELLS:ROOMX2:Zone Ventilation Fan Electric Energy
+  CELLS:ROOMX1:Zone Ventilation Fan Electricity Energy
+  CELLS:ENTRANCE:Zone Ventilation Fan Electricity Energy
+  CELLS:ROOMX2:Zone Ventilation Fan Electricity Energy
 
  For Meter=Fans:Electricity:Zone:CELLS:ROOMX1 [J], ResourceType=Electricity, EndUse=Fans, Group=Zone, contents are:
-  CELLS:ROOMX1:Zone Ventilation Fan Electric Energy
+  CELLS:ROOMX1:Zone Ventilation Fan Electricity Energy
 
  For Meter=Ventilation (simple):Fans:Electricity [J], ResourceType=Electricity, EndUse=Fans, contents are:
-  CELLS:ROOMX1:Zone Ventilation Fan Electric Energy
-  CELLS:ENTRANCE:Zone Ventilation Fan Electric Energy
-  CELLS:ROOMX2:Zone Ventilation Fan Electric Energy
+  CELLS:ROOMX1:Zone Ventilation Fan Electricity Energy
+  CELLS:ENTRANCE:Zone Ventilation Fan Electricity Energy
+  CELLS:ROOMX2:Zone Ventilation Fan Electricity Energy
 
  For Meter=Fans:Electricity:Zone:CELLS:ENTRANCE [J], ResourceType=Electricity, EndUse=Fans, Group=Zone, contents are:
-  CELLS:ENTRANCE:Zone Ventilation Fan Electric Energy
+  CELLS:ENTRANCE:Zone Ventilation Fan Electricity Energy
 
  For Meter=Fans:Electricity:Zone:CELLS:ROOMX2 [J], ResourceType=Electricity, EndUse=Fans, Group=Zone, contents are:
-  CELLS:ROOMX2:Zone Ventilation Fan Electric Energy
+  CELLS:ROOMX2:Zone Ventilation Fan Electricity Energy
 
  For Meter=EnergyTransfer:Facility [J], ResourceType=EnergyTransfer, contents are:
   CELLS:ROOMX1:Zone Air System Sensible Heating Energy
@@ -346,40 +346,40 @@
   CELLS:ROOMX2:Zone Air System Sensible Cooling Energy
 
  For Meter=ElectricityPurchased:Facility [J], ResourceType=ElectricityPurchased, contents are:
-  Whole Building:Facility Total Purchased Electric Energy
+  Whole Building:Facility Total Purchased Electricity Energy
 
  For Meter=ElectricityPurchased:Plant [J], ResourceType=ElectricityPurchased, Group=Plant, contents are:
-  Whole Building:Facility Total Purchased Electric Energy
+  Whole Building:Facility Total Purchased Electricity Energy
 
  For Meter=Cogeneration:ElectricityPurchased [J], ResourceType=ElectricityPurchased, EndUse=Cogeneration, contents are:
-  Whole Building:Facility Total Purchased Electric Energy
+  Whole Building:Facility Total Purchased Electricity Energy
 
  For Meter=General:Cogeneration:ElectricityPurchased [J], ResourceType=ElectricityPurchased, EndUse=Cogeneration, contents are:
-  Whole Building:Facility Total Purchased Electric Energy
+  Whole Building:Facility Total Purchased Electricity Energy
 
  For Meter=ElectricitySurplusSold:Facility [J], ResourceType=ElectricitySurplusSold, contents are:
-  Whole Building:Facility Total Surplus Electric Energy
+  Whole Building:Facility Total Surplus Electricity Energy
 
  For Meter=ElectricitySurplusSold:Plant [J], ResourceType=ElectricitySurplusSold, Group=Plant, contents are:
-  Whole Building:Facility Total Surplus Electric Energy
+  Whole Building:Facility Total Surplus Electricity Energy
 
  For Meter=Cogeneration:ElectricitySurplusSold [J], ResourceType=ElectricitySurplusSold, EndUse=Cogeneration, contents are:
-  Whole Building:Facility Total Surplus Electric Energy
+  Whole Building:Facility Total Surplus Electricity Energy
 
  For Meter=General:Cogeneration:ElectricitySurplusSold [J], ResourceType=ElectricitySurplusSold, EndUse=Cogeneration, contents are:
-  Whole Building:Facility Total Surplus Electric Energy
+  Whole Building:Facility Total Surplus Electricity Energy
 
  For Meter=ElectricityNet:Facility [J], ResourceType=ElectricityNet, contents are:
-  Whole Building:Facility Net Purchased Electric Energy
+  Whole Building:Facility Net Purchased Electricity Energy
 
  For Meter=ElectricityNet:Plant [J], ResourceType=ElectricityNet, Group=Plant, contents are:
-  Whole Building:Facility Net Purchased Electric Energy
+  Whole Building:Facility Net Purchased Electricity Energy
 
  For Meter=Cogeneration:ElectricityNet [J], ResourceType=ElectricityNet, EndUse=Cogeneration, contents are:
-  Whole Building:Facility Net Purchased Electric Energy
+  Whole Building:Facility Net Purchased Electricity Energy
 
  For Meter=General:Cogeneration:ElectricityNet [J], ResourceType=ElectricityNet, EndUse=Cogeneration, contents are:
-  Whole Building:Facility Net Purchased Electric Energy
+  Whole Building:Facility Net Purchased Electricity Energy
 
  For Meter=DistrictHeating:Facility [J], ResourceType=DistrictHeating, contents are:
   CELLS:ROOMX1 IDEAL LOADS AIR:Zone Ideal Loads Supply Air Total Heating Energy

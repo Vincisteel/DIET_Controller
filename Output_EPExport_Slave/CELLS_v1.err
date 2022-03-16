@@ -1,4 +1,6 @@
-Program Version,EnergyPlus, Version 9.3.0-baff08990c, YMD=2022.03.08 13:17,
+Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.16 15:29,
+   ** Warning ** Version: in IDF="9.3" not the same as expected="9.4"
+   ** Warning ** Version: in IDF="9.3" not the same as expected="9.4"
    ** Warning ** ProcessScheduleInput: ExternalInterface:FunctionalMockupUnitExport:To:Schedule="CELLS:ROOMX1_DIETHEATING", Blank Schedule Type Limits Names input -- will not be validated.
    ** Warning ** Sizing:Parameters: note Timesteps in Averaging Window entered value=[2] is less than 1 hour (i.e., 6 timesteps).
    ************* Beginning Zone Sizing Calculations
@@ -66,4 +68,4 @@ Program Version,EnergyPlus, Version 9.3.0-baff08990c, YMD=2022.03.08 13:17,
    *************
    ************* EnergyPlus Warmup Error Summary. During Warmup: 0 Warning; 0 Severe Errors.
    ************* EnergyPlus Sizing Error Summary. During Sizing: 11 Warning; 0 Severe Errors.
-   ************* EnergyPlus Completed Successfully-- 13 Warning; 0 Severe Errors; Elapsed Time=00hr 00min 26.65sec
+   ************* EnergyPlus Completed Successfully-- 15 Warning; 0 Severe Errors; Elapsed Time=00hr 01min  1.69sec
