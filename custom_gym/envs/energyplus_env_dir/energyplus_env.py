@@ -45,6 +45,7 @@ class EnergyPlusEnv(gym.Env):
         self.timestop = days * hours * minutes * seconds # total time length of our simulation
         self.secondstep = self.timestop / self.numsteps  # length of a single step in seconds
         self.simtime = 0                                 # keeps track of current time in the simulation
+        self.model = None
 
 
         self.observation_dim = observation_dim
@@ -56,7 +57,7 @@ class EnergyPlusEnv(gym.Env):
         ## and defining action and observation spaces
 
         self.action_space = Discrete(action_dim)
-        self.observation_space = Box(low=-np.inf,high=np.inf,shape=(9,))
+        self.observation_space = Box(low=-np.inf,high=np.inf,shape=(6,))
 
       
 
@@ -66,7 +67,7 @@ class EnergyPlusEnv(gym.Env):
 
         ## keeping track of current state
         if starting_obs is None:
-            starting_obs = np.array([20.0, 50.0, 20.0, 0.1, 5.5, 1.0, 1.0, 0.0001, 0.0001])
+            starting_obs = np.array([20.0, 50.0, 20.0, 20.0, 0.0001, 0.0001])
 
         self.default_obs = starting_obs
         self.curr_obs = starting_obs
@@ -91,27 +92,11 @@ class EnergyPlusEnv(gym.Env):
         self.simtime = 0 # resetting simulation time tracker
 
         self.model = load_fmu(self.modelname + '.fmu')
-        opts = model.simulate_options()  # Get the default options
+        opts = self.model.simulate_options()  # Get the default options
         opts['ncp'] = self.numsteps  # Specifies the number of timesteps
         opts['initialize'] = False
         simtime = 0
-        model.initialize(simtime, self.timestop)
-        index = 0
-        t = np.linspace(0.0, self.numsteps-1, self.numsteps)
-        inputcheck_heating = np.zeros((self.numsteps, 1))
-        tair = np.zeros((self.numsteps, 1))
-        rh = np.zeros((self.numsteps, 1))
-        tmrt = np.zeros((self.numsteps, 1))
-        tout = np.zeros((self.numsteps, 1))
-        occ = np.zeros((self.numsteps, 1))
-        qheat = np.zeros((self.numsteps, 1))
-      
-        state = np.zeros((self.numsteps, 6))
-
-        pmv = np.zeros((self.numsteps, 1))
-        reward = np.zeros((self.numsteps, 1))
-        action = np.zeros((self.numsteps, 1))
-
+        self.model.initialize(simtime, self.timestop)
 
         return self.curr_obs
 
@@ -140,43 +125,20 @@ class EnergyPlusEnv(gym.Env):
 
         action_temperature = self.action_to_temp[action]
 
-        model.set('Thsetpoint_diet', action_temperature)
-        res = model.do_step(current_t=self.simtime, step_size=self.secondstep, new_step=True)
-inputcheck_heating[index] = model.get('Thsetpoint_diet')
-tair[index], rh[index], tmrt[index], tout[index], qheat[index], occ[index], inputcheck_heating[index] = model.get(['Tair', 'RH', 'Tmrt', 'Tout', 'Qheat', 'Occ', 'Thsetpoint_diet'])
-state[index][0], state[index][1], state[index][2], state[index][3], state[index][4], state[index][5] = tair[index], rh[index], tmrt[index], tout[index], occ[index], qheat[index]
-pmv[index] = comfPMV(tair[index], tmrt[index], rh[index])
-reward[index] = beta * (1 - (qheat[index]/(800*1000))) + alpha * (1 - abs(pmv[index] + 0.5)) * occ[index]   # * int(bool(occ[index])
-if index == 0:
-    obs = np.array([tair[index], rh[index], tmrt[index], tout[index], occ[index], qheat[index]]).flatten(
-else:
-    new_obs = np.array([tair[index], rh[index], tmrt[index], tout[index], occ[index], qheat[index]]).flatten()
-    # We store the new transition into the Experience Replay memory (ReplayBuffer)
-    replay_buffer.add((obs, new_obs, action[index], reward[index]))
-    obs = new_ob
-    self.simtime += self.secondstep
-index += 1
+        self.model.set('Thsetpoint_diet', action_temperature)
+        res = self.model.do_step(current_t=self.simtime, step_size=self.secondstep, new_step=True)
+        self.curr_obs = np.array(list(self.model.get(['Tair', 'RH', 'Tmrt', 'Tout', 'Qheat', 'Occ'])))
+
+        self.simtime += self.secondstep
 
 
-
-        next_state = self.simulate_energyplus(self.curr_obs,action)
+        next_state = self.curr_obs
         
         ## defines whether it's time to reset the environemnt or not
-        done = False
+        done = (self.simtime == self.timestop)
         ## debugging dict
         info = {}
         return next_state, reward, done, info
-
-
-
-
-    def simulate_energyplus(self, obs: np.ndarray, action:Discrete) -> np.ndarray:
-        ## TODO
-
-        next_state = self.observation_space.sample()
-
-        return next_state
-
 
 
     def observation_to_dict(self,obs:Box) -> Dict[str, float]:
@@ -186,17 +148,14 @@ index += 1
         Args:
             obs (np.array): observation of the environment, must be an element of self.observation_space
         """
-        
+
         dict_values = {
             "tair_in":obs[0],
             "rh_in": obs[1],
             "tmrt_in": obs[2],
-            "vair_in": obs[3],
-            "tout_in":obs[4],
-            "clo_in": obs[5],
-            "met_in": obs[6],
-            "occ_in": obs[7],
-            "qheat_in": obs[8],
+            "tout":obs[3],
+            "qheat_in": obs[4],
+            "occ_in": obs[5]
         }
 
         return dict_values
@@ -232,10 +191,10 @@ index += 1
 
         ta = dict_values["tair_in"]
         tr = dict_values["tmrt_in"]
-        vel= dict_values["vair_in"]
+        vel= 0.1
         rh = dict_values["rh_in"]
-        met =dict_values["met_in"]
-        clo =dict_values["clo_in"]
+        met =1.1
+        clo = 1
         wme=0
 
         pa = rh * 10 * math.exp(16.6536 - 4030.183 / (ta + 235))
