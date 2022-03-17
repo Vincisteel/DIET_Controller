@@ -10,11 +10,27 @@ from plotly.subplots import make_subplots
 import plotly.offline as pyo
 import os
 import pandas as pd
+import gym
+import sys
+import os
+from gym.utils import seeding
+from gym.spaces import Discrete, Box
+import subprocess
+import numpy as np
+import math
+from typing import Dict, List, Tuple
 
 
 
 
 # We set the parameters
+
+
+
+
+
+## DDPG parameters
+
 save_models = True  # Boolean checker whether or not to save the pre-trained model
 expl_noise = 0.1  # Exploration noise - STD value of exploration Gaussian noise
 batch_size = 128  # Size of the batch
@@ -24,6 +40,10 @@ policy_noise = 0.2  # STD of Gaussian noise added to the actions for the explora
 noise_clip = 0.5  # Maximum value of the Gaussian noise added to the actions (policy)
 alpha = 3  # Adjusting co-efficient for the comfort reward
 beta = 1  # Adjusting co-efficient for the energy reward
+
+
+## Environment parameters
+
 modelname = 'CELLS_v1'
 days = 151  # Number of days the simulation is run for
 hours = 24  # Number of hours each day the simulation is run for
@@ -39,6 +59,56 @@ comfort_lim = 0
 min_temp=12
 max_temp=30
 
+
+## initilaize / reset 
+
+model = load_fmu(modelname + '.fmu')
+opts = model.simulate_options()  # Get the default options
+opts['ncp'] = numsteps  # Specifies the number of timesteps
+opts['initialize'] = False
+simtime = 0
+model.initialize(simtime, timestop)
+index = 0
+t = np.linspace(0.0, numsteps-1, numsteps)
+inputcheck_heating = np.zeros((numsteps, 1))
+tair = np.zeros((numsteps, 1))
+rh = np.zeros((numsteps, 1))
+tmrt = np.zeros((numsteps, 1))
+tout = np.zeros((numsteps, 1))
+occ = np.zeros((numsteps, 1))
+qheat = np.zeros((numsteps, 1))
+pmv = np.zeros((numsteps, 1))
+reward = np.zeros((numsteps, 1))
+action = np.zeros((numsteps, 1))
+state = np.zeros((numsteps, 6))
+
+
+
+## do a step
+
+model.set('Thsetpoint_diet', action[index])
+res = model.do_step(current_t=simtime, step_size=secondstep, new_step=True)
+inputcheck_heating[index] = model.get('Thsetpoint_diet')
+tair[index], rh[index], tmrt[index], tout[index], qheat[index], occ[index], inputcheck_heating[index] = model.get(['Tair', 'RH', 'Tmrt', 'Tout', 'Qheat', 'Occ', 'Thsetpoint_diet'])
+state[index][0], state[index][1], state[index][2], state[index][3], state[index][4], state[index][5] = tair[index], rh[index], tmrt[index], tout[index], occ[index], qheat[index]
+pmv[index] = comfPMV(tair[index], tmrt[index], rh[index])
+reward[index] = beta * (1 - (qheat[index]/(800*1000))) + alpha * (1 - abs(pmv[index] + 0.5)) * occ[index]   # * int(bool(occ[index])
+if index == 0:
+    obs = np.array([tair[index], rh[index], tmrt[index], tout[index], occ[index], qheat[index]]).flatten(
+else:
+    new_obs = np.array([tair[index], rh[index], tmrt[index], tout[index], occ[index], qheat[index]]).flatten()
+    # We store the new transition into the Experience Replay memory (ReplayBuffer)
+    replay_buffer.add((obs, new_obs, action[index], reward[index]))
+    obs = new_ob
+simtime += secondstep
+index += 1
+
+
+
+def simulate_energyplus(self, obs: np.ndarray, action:Discrete) -> np.ndarray:
+    ## TODO
+    next_state = self.observation_space.sample()
+    return next_state
 
 # We create a filename for the two saved models: the Actor and Critic Models
 file_name = "%s_%s" % ("DDPG", "DIET")
@@ -63,27 +133,12 @@ os.chdir(r'C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller')
 TRAIN_PATH = "./Training_Data/01032022/Ep"
 MODEL_PATH = "./pytorch_models/01032022"
 
+## At each episode, we need to reset the EnergyPlus environment
+## Before doing anything, we train the model on what is stored in the replay buffer
+
 for sim_num in range(num_total_episodes):
 
-    model = load_fmu(modelname + '.fmu')
-    opts = model.simulate_options()  # Get the default options
-    opts['ncp'] = numsteps  # Specifies the number of timesteps
-    opts['initialize'] = False
-    simtime = 0
-    model.initialize(simtime, timestop)
-    index = 0
-    t = np.linspace(0.0, numsteps-1, numsteps)
-    inputcheck_heating = np.zeros((numsteps, 1))
-    tair = np.zeros((numsteps, 1))
-    rh = np.zeros((numsteps, 1))
-    tmrt = np.zeros((numsteps, 1))
-    tout = np.zeros((numsteps, 1))
-    occ = np.zeros((numsteps, 1))
-    qheat = np.zeros((numsteps, 1))
-    pmv = np.zeros((numsteps, 1))
-    reward = np.zeros((numsteps, 1))
-    action = np.zeros((numsteps, 1))
-    state = np.zeros((numsteps, 6))
+
 
     if sim_num != 0:
         print("Total timesteps: {} Episode Num: {} Reward: {}".format(numsteps, sim_num, np.sum(reward.flatten())))
@@ -107,25 +162,7 @@ for sim_num in range(num_total_episodes):
                 action_arr = (action_arr + np.random.normal(0, expl_noise, size=1)).clip(min_temp, max_temp)
                 action[index] = action_arr[0]
 
-        model.set('Thsetpoint_diet', action[index])
-        res = model.do_step(current_t=simtime, step_size=secondstep, new_step=True)
-        inputcheck_heating[index] = model.get('Thsetpoint_diet')
-        tair[index], rh[index], tmrt[index], tout[index], qheat[index], occ[index], inputcheck_heating[index] = model.get(['Tair', 'RH', 'Tmrt', 'Tout', 'Qheat', 'Occ', 'Thsetpoint_diet'])
-        state[index][0], state[index][1], state[index][2], state[index][3], state[index][4], state[index][5] = tair[index], rh[index], tmrt[index], tout[index], occ[index], qheat[index]
-        pmv[index] = comfPMV(tair[index], tmrt[index], rh[index])
-        reward[index] = beta * (1 - (qheat[index]/(800*1000))) + alpha * (1 - abs(pmv[index] + 0.5)) * occ[index]   # * int(bool(occ[index]))
-
-        if index == 0:
-            obs = np.array([tair[index], rh[index], tmrt[index], tout[index], occ[index], qheat[index]]).flatten()
-
-        else:
-            new_obs = np.array([tair[index], rh[index], tmrt[index], tout[index], occ[index], qheat[index]]).flatten()
-            # We store the new transition into the Experience Replay memory (ReplayBuffer)
-            replay_buffer.add((obs, new_obs, action[index], reward[index]))
-            obs = new_obs
-
-        simtime += secondstep
-        index += 1
+        
     os.makedirs(TRAIN_PATH+str(sim_num+1), exist_ok=True)
     # Writing to .csv files to save the data from the episode
     np.savetxt(TRAIN_PATH+str(sim_num+1)+"/state.csv", state[:-1, :], delimiter=",")
