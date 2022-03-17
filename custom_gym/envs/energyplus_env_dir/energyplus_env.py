@@ -8,12 +8,22 @@ import numpy as np
 import math
 from typing import Dict, List, Tuple
 
+import math
+from pyfmi import load_fmu
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import plotly.offline as pyo
 
 class EnergyPlusEnv(gym.Env):
 
     """
     Custom Environment to interact with TRNSYS and define observation and action space
+
+    days = Number of days the simulation is run for
+    hours = Number of hours each day the simulation is run for
+    ep_timestep =Number of timesteps per hour
     """
+    
 
     def __init__(self,
     observation_dim:int = 9,
@@ -22,7 +32,19 @@ class EnergyPlusEnv(gym.Env):
     max_temp:int = 21, 
     starting_obs =None,
     alpha:float = 0.5,
-    beta:float = 1):
+    beta:float = 1,
+    modelname: str = 'CELLS_v1',
+    days:int = 151,  
+    hours:int = 24,  
+    minutes:int = 60,
+    seconds:int = 60,
+    ep_timestep:int = 6):
+
+
+        self.numsteps = days * hours * ep_timestep       # total number of simulation steps during the simulationx
+        self.timestop = days * hours * minutes * seconds # total time length of our simulation
+        self.secondstep = self.timestop / self.numsteps  # length of a single step in seconds
+        self.simtime = 0                                 # keeps track of current time in the simulation
 
 
         self.observation_dim = observation_dim
@@ -50,6 +72,51 @@ class EnergyPlusEnv(gym.Env):
         self.curr_obs = starting_obs
 
 
+    def reset(self,seed=None) ->  np.ndarray :
+        """
+        Resets the environment to an initial state and returns an initial observation.
+
+        Returns:
+            np.array: Element of self.observation_space, representing the HVAC environment dynamics
+        """
+        ## seeding
+        if seed is None:
+            seed=42
+
+        self.observation_space.seed(seed)
+        self.action_space.seed(seed)
+
+        ## resetting
+        self.curr_obs = self.default_obs
+        self.simtime = 0 # resetting simulation time tracker
+
+        self.model = load_fmu(self.modelname + '.fmu')
+        opts = model.simulate_options()  # Get the default options
+        opts['ncp'] = self.numsteps  # Specifies the number of timesteps
+        opts['initialize'] = False
+        simtime = 0
+        model.initialize(simtime, self.timestop)
+        index = 0
+        t = np.linspace(0.0, self.numsteps-1, self.numsteps)
+        inputcheck_heating = np.zeros((self.numsteps, 1))
+        tair = np.zeros((self.numsteps, 1))
+        rh = np.zeros((self.numsteps, 1))
+        tmrt = np.zeros((self.numsteps, 1))
+        tout = np.zeros((self.numsteps, 1))
+        occ = np.zeros((self.numsteps, 1))
+        qheat = np.zeros((self.numsteps, 1))
+      
+        state = np.zeros((self.numsteps, 6))
+
+        pmv = np.zeros((self.numsteps, 1))
+        reward = np.zeros((self.numsteps, 1))
+        action = np.zeros((self.numsteps, 1))
+
+
+        return self.curr_obs
+
+
+
     def step(self, action: Discrete) -> Tuple[np.ndarray,float,bool,dict]:
         """
 
@@ -70,6 +137,28 @@ class EnergyPlusEnv(gym.Env):
 
         reward = self.compute_reward(self.curr_obs,self.alpha,self.beta)
 
+
+        action_temperature = self.action_to_temp[action]
+
+        model.set('Thsetpoint_diet', action_temperature)
+        res = model.do_step(current_t=self.simtime, step_size=self.secondstep, new_step=True)
+inputcheck_heating[index] = model.get('Thsetpoint_diet')
+tair[index], rh[index], tmrt[index], tout[index], qheat[index], occ[index], inputcheck_heating[index] = model.get(['Tair', 'RH', 'Tmrt', 'Tout', 'Qheat', 'Occ', 'Thsetpoint_diet'])
+state[index][0], state[index][1], state[index][2], state[index][3], state[index][4], state[index][5] = tair[index], rh[index], tmrt[index], tout[index], occ[index], qheat[index]
+pmv[index] = comfPMV(tair[index], tmrt[index], rh[index])
+reward[index] = beta * (1 - (qheat[index]/(800*1000))) + alpha * (1 - abs(pmv[index] + 0.5)) * occ[index]   # * int(bool(occ[index])
+if index == 0:
+    obs = np.array([tair[index], rh[index], tmrt[index], tout[index], occ[index], qheat[index]]).flatten(
+else:
+    new_obs = np.array([tair[index], rh[index], tmrt[index], tout[index], occ[index], qheat[index]]).flatten()
+    # We store the new transition into the Experience Replay memory (ReplayBuffer)
+    replay_buffer.add((obs, new_obs, action[index], reward[index]))
+    obs = new_ob
+    self.simtime += self.secondstep
+index += 1
+
+
+
         next_state = self.simulate_energyplus(self.curr_obs,action)
         
         ## defines whether it's time to reset the environemnt or not
@@ -79,25 +168,6 @@ class EnergyPlusEnv(gym.Env):
         return next_state, reward, done, info
 
 
-
-    def reset(self,seed=None) ->  np.ndarray :
-        """
-        Resets the environment to an initial state and returns an initial observation.
-
-        Returns:
-            np.array: Element of self.observation_space, representing the HVAC environment dynamics
-        """
-        ## seeding
-        if seed is None:
-            seed=42
-
-        self.observation_space.seed(seed)
-        self.action_space.seed(seed)
-
-        ## resetting
-        self.curr_obs = self.default_obs
-
-        return self.curr_obs
 
 
     def simulate_energyplus(self, obs: np.ndarray, action:Discrete) -> np.ndarray:

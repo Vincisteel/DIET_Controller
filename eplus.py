@@ -41,6 +41,8 @@ noise_clip = 0.5  # Maximum value of the Gaussian noise added to the actions (po
 alpha = 3  # Adjusting co-efficient for the comfort reward
 beta = 1  # Adjusting co-efficient for the energy reward
 
+num_random_episodes = 1
+num_total_episodes = 3
 
 ## Environment parameters
 
@@ -50,8 +52,7 @@ hours = 24  # Number of hours each day the simulation is run for
 minutes = 60
 seconds = 60
 ep_timestep = 6  # Number of timesteps per hour
-num_random_episodes = 1
-num_total_episodes = 3
+
 numsteps = days * hours * ep_timestep
 timestop = days * hours * minutes * seconds
 secondstep = timestop / numsteps
