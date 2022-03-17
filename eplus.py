@@ -59,7 +59,6 @@ comfort_lim = 0
 min_temp=12
 max_temp=30
 
-
 ## initilaize / reset 
 
 model = load_fmu(modelname + '.fmu')
@@ -102,6 +101,71 @@ else:
     obs = new_ob
 simtime += secondstep
 index += 1
+
+
+
+
+## save and plot results
+
+    os.makedirs(TRAIN_PATH+str(sim_num+1), exist_ok=True)
+    # Writing to .csv files to save the data from the episode
+    np.savetxt(TRAIN_PATH+str(sim_num+1)+"/state.csv", state[:-1, :], delimiter=",")
+    np.savetxt(TRAIN_PATH+str(sim_num+1)+"/next_state.csv", state[1:, :], delimiter=",")
+    np.savetxt(TRAIN_PATH+str(sim_num+1)+"/action.csv", action[1:, :], delimiter=",")
+    np.savetxt(TRAIN_PATH+str(sim_num+1)+"/reward.csv", reward[1:, :], delimiter=",")
+    np.savetxt(TRAIN_PATH+str(sim_num+1)+"/pmv.csv", pmv[1:, :], delimiter=",")
+
+    # Plotting the summary of simulation
+    fig = make_subplots(rows=6, cols=1, shared_xaxes=True, vertical_spacing=0.04,
+                        specs=[[{"secondary_y": False}], [{"secondary_y": False}], [{"secondary_y": False}],
+                               [{"secondary_y": True}], [{"secondary_y": True}], [{"secondary_y": False}]])
+
+    # Add traces
+    fig.add_trace(go.Scatter(name='Tair(state)', x=t, y=tair.flatten(), mode='lines', line=dict(width=1, color='cyan')),
+                  row=1, col=1)
+    fig.add_trace(go.Scatter(name='Tair_avg', x=t, y=pd.Series(tair.flatten()).rolling(window=24).mean(), mode='lines',
+                  line=dict(width=2, color='blue')), row=1, col=1)
+    fig.add_trace(go.Scatter(name='Tset(action)', x=t, y=action.flatten(), mode='lines', line=dict(width=1, color='fuchsia')),
+                  row=2, col=1)
+    fig.add_trace(go.Scatter(name='Tset_avg', x=t, y=pd.Series(action.flatten()).rolling(window=24).mean(), mode='lines',
+                  line=dict(width=2, color='purple')), row=2, col=1)
+    fig.add_trace(go.Scatter(name='Pmv', x=t, y=pmv.flatten(), mode='lines', line=dict(width=1, color='gold')),
+                  row=3, col=1)
+    fig.add_trace(go.Scatter(name='Pmv_avg', x=t, y=pd.Series(pmv.flatten()).rolling(window=24).mean(), mode='lines',
+                  line=dict(width=2, color='darkorange')), row=3, col=1)
+    fig.add_trace(go.Scatter(name='Heating', x=t, y=qheat.flatten(), mode='lines', line=dict(width=1, color='red')),
+                  row=4, col=1, secondary_y=False)
+    fig.add_trace(go.Scatter(name='Heating_cumulative', x=t, y=np.cumsum(qheat.flatten()), mode='lines',
+                  line=dict(width=2, color='darkred')), row=4, col=1, secondary_y=True)
+    fig.add_trace(go.Scatter(name='Reward', x=t, y=reward.flatten(), mode='lines', line=dict(width=1, color='lime')),
+                  row=5, col=1, secondary_y=False)
+    fig.add_trace(go.Scatter(name='Reward_cum', x=t, y=np.cumsum(reward.flatten()), mode='lines',
+                  line=dict(width=2, color='darkgreen')), row=5, col=1, secondary_y=True)
+    fig.add_trace(go.Scatter(name='Occupancy', x=t, y=occ.flatten(), mode='lines',
+                  line=dict(width=1, color='black')), row=6, col=1)
+
+    # Set x-axis title
+    fig.update_xaxes(title_text="Timestep (-)", row=6, col=1)
+
+    # Set y-axes titles
+    fig.update_yaxes(title_text="<b>Tair</b> (°C)", range=[10, 24], row=1, col=1)
+    fig.update_yaxes(title_text="<b>Tset</b> (°C)", range=[12, 30], row=2, col=1)
+    fig.update_yaxes(title_text="<b>PMV</b> (-)", row=3, col=1)
+    fig.update_yaxes(title_text="<b>Heat Power</b> (kJ/hr)", row=4, col=1, secondary_y=False)
+    fig.update_yaxes(title_text="<b>Heat Energy</b> (kJ)", row=4, col=1, secondary_y=True)
+    fig.update_yaxes(title_text="<b>Reward</b> (-)", row=5, col=1, range=[-5, 5], secondary_y=False)
+    fig.update_yaxes(title_text="<b>Tot Reward</b> (-)", row=5, col=1, secondary_y=True)
+    fig.update_yaxes(title_text="<b>Fraction</b> (-)", row=6, col=1)
+
+    fig.update_xaxes(nticks=50)
+
+    fig.update_layout(template='plotly_white', font=dict(family="Courier New, monospace", size=12),
+                      legend=dict(orientation="h", yanchor="bottom", y=1, xanchor="right", x=1))
+
+    pyo.plot(fig, filename=TRAIN_PATH+str(sim_num+1)+"/results.html")
+
+    del model, opts
+
 
 
 
