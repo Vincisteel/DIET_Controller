@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.18 12:44
+Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.18 15:09
 ! <Version>, Version ID
  Version, 9.3
 ! <Timesteps per Hour>, #TimeSteps, Minutes per TimeStep {minutes}
@@ -429,3 +429,7 @@ HeatTransfer Surface,CELLS:ROOMX2_ROOF_1_0_0,Roof,,CTF - ConductionTransferFunct
 Environment,FRIBOURG (O1-O1:31-12),WeatherFileRunPeriod,01/01/2017,05/31/2017,Sunday,151,Use RunPeriod Specified Day,No,No,Yes,Yes,Yes,Clark and Allen
 Environment:Daylight Saving,Yes,InputFile,03/26,10/29
 Environment:WarmupDays,  9
+! <Warmup Convergence Information>,Zone Name,Environment Type/Name,Average Warmup Temperature Difference {deltaC},Std Dev Warmup Temperature Difference {deltaC},Max Temperature Pass/Fail Convergence,Min Temperature Pass/Fail Convergence,Average Warmup Load Difference {W},Std Dev Warmup Load Difference {W},Heating Load Pass/Fail Convergence,Cooling Load Pass/Fail Convergence
+ Warmup Convergence Information,CELLS:ROOMX1,RunPeriod: FRIBOURG (O1-O1:31-12),5.4421669046E-002,6.9648301903E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,CELLS:ENTRANCE,RunPeriod: FRIBOURG (O1-O1:31-12),1.3075960068E-015,1.2731609196E-015,Pass,Pass,8.3749781737E-003,7.1573590873E-003,Pass,Pass
+ Warmup Convergence Information,CELLS:ROOMX2,RunPeriod: FRIBOURG (O1-O1:31-12),5.3014375511E-002,6.7222511375E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass

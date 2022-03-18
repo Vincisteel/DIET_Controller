@@ -1,24 +1,24 @@
 *** BCVTB client log file.
 *************************.
-Writing to socket at time = 2.400000e+03
+Writing to socket at time = 6.000000e+06
 Assembling buffer.
-Write to socket with fd = 696
-Buffer        = 2 0 6 0 0 2.400000000000000e+03 7.414747395294204e+00 4.071893091656750e+01 7.941388773509000e+00 -1.342758326734651e+00 0.000000000000000e+00 0.000000000000000e+00 
+Write to socket with fd = 732
+Buffer        = 2 0 6 0 0 6.000000000000000e+06 1.619460657644359e+01 4.292290910544605e+01 1.680187447281306e+01 7.523908339932015e+00 0.000000000000000e+00 0.000000000000000e+00 
 
-Wrote 166 characters to socket.
+Wrote 165 characters to socket.
 Reading from socket.
 In readbufferfromsocket: Read -1 chars, maximum is 21644.
 Error reading: WSAGetLastError = 10054
 Finished exchanging data with socket: simTimRea=0.000000e+00, flag=-1.
 Assembling buffer.
-Write to socket with fd = 696
+Write to socket with fd = 732
 Buffer        = 2 -20 
 
 Error writing to socket: Return value = -1.
 Error writing to socket: WSAGetLastError = 10054
 sendclientmessage wrote flag -20, return value = -1.
 Assembling buffer.
-Write to socket with fd = 696
+Write to socket with fd = 732
 Buffer        = 2 -1 
 
 Error writing to socket: Return value = -1.

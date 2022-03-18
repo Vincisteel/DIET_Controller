@@ -27,9 +27,9 @@ class EnergyPlusEnv(gym.Env):
 
     def __init__(self,
     observation_dim:int = 9,
-    action_dim:int = 100, 
-    min_temp:int = 16, 
-    max_temp:int = 21, 
+    action_dim:int = 200, 
+    min_temp:int = 12, 
+    max_temp:int = 30, 
     starting_obs =None,
     alpha:float = 0.5,
     beta:float = 1,
@@ -128,6 +128,7 @@ class EnergyPlusEnv(gym.Env):
         info (dict): contains auxiliary diagnostic information (helpful for debugging, learning, and logging). 
         """
 
+        pmv = self.comfPMV(self.curr_obs)
         reward = self.compute_reward(self.curr_obs,self.alpha,self.beta)
 
 
@@ -142,10 +143,11 @@ class EnergyPlusEnv(gym.Env):
 
         next_state = self.curr_obs
         
-        ## defines whether it's time to reset the environemnt or not
+        ## defines whether it's time to reset the environment or not
         done = (self.simtime == self.timestop)
         ## debugging dict
-        info = {}
+        info = {'Simtime':self.simtime,'pmv':pmv}
+        
         return next_state, reward, done, info
 
 

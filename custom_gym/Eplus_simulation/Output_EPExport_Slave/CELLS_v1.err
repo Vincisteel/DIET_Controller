@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.18 12:44,
+Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.18 15:09,
    ** Warning ** Version: in IDF="9.3" not the same as expected="9.4"
    ** Warning ** Version: in IDF="9.3" not the same as expected="9.4"
    ** Warning ** ProcessScheduleInput: ExternalInterface:FunctionalMockupUnitExport:To:Schedule="CELLS:ROOMX1_DIETHEATING", Blank Schedule Type Limits Names input -- will not be validated.
@@ -41,12 +41,12 @@ Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.18 12:44,
    ************* Beginning Simulation
    ** Warning ** Processing Monthly Tabular Reports: Variable names not valid for this simulation
    **   ~~~   ** ...use Output:Diagnostics,DisplayExtraWarnings; to show more details on individual variables.
-   ** Severe  ** ExternalInterface: Socket communication received error value "-1" at time = 0.66 hours.
+   ** Severe  ** ExternalInterface: Socket communication received error value "-1" at time = 1666.66 hours.
    **   ~~~   ** ExternalInterface: Flag from server " 0".
    **  Fatal  ** Error in ExternalInterface: Check EnergyPlus *.err file.
    ...Summary of Errors that led to program termination:
    ..... Reference severe error count=1
-   ..... Last severe error=ExternalInterface: Socket communication received error value "-1" at time = 0.66 hours.
+   ..... Last severe error=ExternalInterface: Socket communication received error value "-1" at time = 1666.66 hours.
    *************
    ************* ===== Recurring Error Summary =====
    ************* The following recurring error messages occurred.
@@ -67,4 +67,4 @@ Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.18 12:44,
    *************
    ************* EnergyPlus Warmup Error Summary. During Warmup: 0 Warning; 0 Severe Errors.
    ************* EnergyPlus Sizing Error Summary. During Sizing: 11 Warning; 0 Severe Errors.
-   ************* EnergyPlus Terminated--Fatal Error Detected. 15 Warning; 1 Severe Errors; Elapsed Time=00hr 00min 51.70sec
+   ************* EnergyPlus Terminated--Fatal Error Detected. 15 Warning; 1 Severe Errors; Elapsed Time=00hr 04min 22.00sec
