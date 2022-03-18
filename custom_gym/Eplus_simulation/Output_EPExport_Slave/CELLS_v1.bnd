@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.15 09:16
+Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.18 12:44
 ! This file shows details about the branches, nodes, and other
 ! elements of the flow connections.
 ! This file is intended for use in "debugging" potential problems
@@ -112,4 +112,37 @@ Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.15 09:16
 ! <#AirLoopHVACs>,<Number of AirLoopHVACs>
  #AirLoopHVACs,0
 ! <AirLoopHVAC>,<Air Loop Name>,<# Return Nodes>,<# Supply Nodes>,<# Zones Cooled>,<# Zones Heated>,<Outdoor Air Used>
-! <AirLoop Return Connections>,<Connection Count>,<Ai
+! <AirLoop Return Connections>,<Connection Count>,<AirLoopHVAC Name>,<Zn Eqp Return Node #>,<Zn Eqp Return Node Name>,<AirLoop Return Node #>,<Air Loop Return Node Name>
+! <AirLoop Supply Connections>,<Connection Count>,<AirLoopHVAC Name>,<Zn Eqp Supply Node #>,<Zn Eqp Supply Node Name>,<AirLoop Supply Node #>,<Air Loop Supply Node Name>
+! <Cooled Zone Info>,<Cooled Zone Count>,<Cooled Zone Name>,<Cooled Zone Inlet Node #>,<Cooled Zone Inlet Node Name>,<AirLoopHVAC Name>
+! <Heated Zone Info>,<Heated Zone Count>,<Heated Zone Name>,<Heated Zone Inlet Node #>,<Heated Zone Inlet Node Name>,<AirLoopHVAC Name>
+! <Outdoor Air Connections>,<OA Inlet Node #>,<OA Return Air Inlet Node Name>,<OA Outlet Node #>,<OA Mixed Air Outlet Node Name>,<AirLoopHVAC Name>
+! <AirLoopHVAC Connector>,<Connector Type>,<Connector Name>,<Loop Name>,<Loop Type>,<Number of Inlets/Outlets>
+! <AirLoopHVAC Connector Branches>,<Connector Node Count>,<Connector Type>,<Connector Name>,<Inlet Branch>,<Outlet Branch>,<Loop Name>,<Loop Type>
+! <AirLoopHVAC Connector Nodes>,<Connector Node Count>,<Connector Type>,<Connector Name>,<Inlet Node>,<Outlet Node>,<Loop Name>,<Loop Type>
+! ===============================================================
+! <#Parent Node Connections>,<Number of Parent Node Connections>
+ #Parent Node Connections,0
+! <Parent Node Connection>,<Node Name>,<Node ObjectType>,<Node ObjectName>,<Node ConnectionType>,<Node FluidStream>
+! ===============================================================
+! <#Non-Parent Node Connections>,<Number of Non-Parent Node Connections>
+ #Non-Parent Node Connections,18
+! <Non-Parent Node Connection>,<Node Name>,<Node ObjectType>,<Node ObjectName>,<Node ConnectionType>,<Node FluidStream>
+ Non-Parent Node Connection,NODE CELLS:ROOMX1 ZONE,ZONEHVAC:EQUIPMENTCONNECTIONS,CELLS:ROOMX1,ZoneNode,1
+ Non-Parent Node Connection,NODE CELLS:ROOMX1 IN,ZONEHVAC:EQUIPMENTCONNECTIONS,CELLS:ROOMX1,ZoneInlet,1
+ Non-Parent Node Connection,NODE CELLS:ROOMX1 OUT,ZONEHVAC:EQUIPMENTCONNECTIONS,CELLS:ROOMX1,ZoneReturn,1
+ Non-Parent Node Connection,NODE CELLS:ENTRANCE ZONE,ZONEHVAC:EQUIPMENTCONNECTIONS,CELLS:ENTRANCE,ZoneNode,1
+ Non-Parent Node Connection,NODE CELLS:ENTRANCE IN,ZONEHVAC:EQUIPMENTCONNECTIONS,CELLS:ENTRANCE,ZoneInlet,1
+ Non-Parent Node Connection,NODE CELLS:ENTRANCE OUT,ZONEHVAC:EQUIPMENTCONNECTIONS,CELLS:ENTRANCE,ZoneReturn,1
+ Non-Parent Node Connection,NODE CELLS:ROOMX2 ZONE,ZONEHVAC:EQUIPMENTCONNECTIONS,CELLS:ROOMX2,ZoneNode,1
+ Non-Parent Node Connection,NODE CELLS:ROOMX2 IN,ZONEHVAC:EQUIPMENTCONNECTIONS,CELLS:ROOMX2,ZoneInlet,1
+ Non-Parent Node Connection,NODE CELLS:ROOMX2 OUT,ZONEHVAC:EQUIPMENTCONNECTIONS,CELLS:ROOMX2,ZoneReturn,1
+ Non-Parent Node Connection,NODE CELLS:ROOMX1 IN,ZONEHVAC:IDEALLOADSAIRSYSTEM,CELLS:ROOMX1 IDEAL LOADS AIR,Outlet,1
+ Non-Parent Node Connection,CELLS:ROOMX1 IDEAL LOADS AIR OUTDOOR AIR INLET NODE,ZONEHVAC:IDEALLOADSAIRSYSTEM,CELLS:ROOMX1 IDEAL LOADS AIR,Outlet,1
+ Non-Parent Node Connection,CELLS:ROOMX1 IDEAL LOADS AIR OUTDOOR AIR INLET NODE,OUTDOORAIR:NODE,OutdoorAir:Node,OutdoorAir,1
+ Non-Parent Node Connection,NODE CELLS:ENTRANCE IN,ZONEHVAC:IDEALLOADSAIRSYSTEM,CELLS:ENTRANCE IDEAL LOADS AIR,Outlet,1
+ Non-Parent Node Connection,CELLS:ENTRANCE IDEAL LOADS AIR OUTDOOR AIR INLET NODE,ZONEHVAC:IDEALLOADSAIRSYSTEM,CELLS:ENTRANCE IDEAL LOADS AIR,Outlet,1
+ Non-Parent Node Connection,CELLS:ENTRANCE IDEAL LOADS AIR OUTDOOR AIR INLET NODE,OUTDOORAIR:NODE,OutdoorAir:Node,OutdoorAir,2
+ Non-Parent Node Connection,NODE CELLS:ROOMX2 IN,ZONEHVAC:IDEALLOADSAIRSYSTEM,CELLS:ROOMX2 IDEAL LOADS AIR,Outlet,1
+ Non-Parent Node Connection,CELLS:ROOMX2 IDEAL LOADS AIR OUTDOOR AIR INLET NODE,ZONEHVAC:IDEALLOADSAIRSYSTEM,CELLS:ROOMX2 IDEAL LOADS AIR,Outlet,1
+ Non-Parent Node Connection,CELLS:ROOMX2 IDEAL LOADS AIR OUTDOOR AIR INLET NODE,OUTDOORAIR:NODE,OutdoorAir:Node,OutdoorAir,3

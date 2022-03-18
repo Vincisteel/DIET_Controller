@@ -34,6 +34,7 @@ class EnergyPlusEnv(gym.Env):
     alpha:float = 0.5,
     beta:float = 1,
     modelname: str = 'CELLS_v1',
+    simulation_path:str= r'C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\custom_gym\Eplus_simulation',
     days:int = 151,  
     hours:int = 24,  
     minutes:int = 60,
@@ -41,6 +42,9 @@ class EnergyPlusEnv(gym.Env):
     ep_timestep:int = 6):
 
 
+        ## parameters for the EnergyPlus FMU simulation
+        self.modelname=modelname
+        self.simulation_path = simulation_path
         self.numsteps = days * hours * ep_timestep       # total number of simulation steps during the simulationx
         self.timestop = days * hours * minutes * seconds # total time length of our simulation
         self.secondstep = self.timestop / self.numsteps  # length of a single step in seconds
@@ -48,6 +52,7 @@ class EnergyPlusEnv(gym.Env):
         self.model = None
 
 
+        ## parameters for dimensions of the state and reward function
         self.observation_dim = observation_dim
         self.action_dim = action_dim
         self.alpha = alpha
@@ -91,6 +96,9 @@ class EnergyPlusEnv(gym.Env):
         self.curr_obs = self.default_obs
         self.simtime = 0 # resetting simulation time tracker
 
+
+        ## getting to the right place for loading
+        os.chdir(self.simulation_path)
         self.model = load_fmu(self.modelname + '.fmu')
         opts = self.model.simulate_options()  # Get the default options
         opts['ncp'] = self.numsteps  # Specifies the number of timesteps
