@@ -1,3 +1,4 @@
+from ast import Str
 import gym
 import sys
 import os
@@ -6,7 +7,7 @@ from gym.spaces import Discrete, Box
 import subprocess
 import numpy as np
 import math
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import math
 from pyfmi import load_fmu
@@ -26,13 +27,12 @@ class EnergyPlusEnv(gym.Env):
     
 
     def __init__(self,
-    observation_dim:int = 9,
+    observation_dim:int = 6,
     action_dim:int = 200, 
     min_temp:int = 12, 
     max_temp:int = 30, 
-    starting_obs =None,
-    alpha:float = 0.5,
-    beta:float = 1,
+    alpha:float = 1, #thermal comfort
+    beta:float = 1, # energy consumption
     modelname: str = 'CELLS_v1',
     simulation_path:str= r'C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\custom_gym\Eplus_simulation',
     days:int = 151,  
@@ -62,7 +62,7 @@ class EnergyPlusEnv(gym.Env):
         ## and defining action and observation spaces
 
         self.action_space = Discrete(action_dim)
-        self.observation_space = Box(low=-np.inf,high=np.inf,shape=(6,))
+        self.observation_space = Box(low=-np.inf,high=np.inf,shape=(self.observation_dim,))
 
       
 
@@ -70,12 +70,23 @@ class EnergyPlusEnv(gym.Env):
         self.action_to_temp = np.linspace(min_temp,max_temp,action_dim)
 
 
-        ## keeping track of current state
-        if starting_obs is None:
-            starting_obs = np.array([20.0, 50.0, 20.0, 20.0, 0.0001, 0.0001])
+        self.curr_obs = None
 
-        self.default_obs = starting_obs
-        self.curr_obs = starting_obs
+        self.log_dict={
+        "observation_dim":observation_dim,
+        "action_dim":action_dim,
+        "min_temp":min_temp, 
+    "max_temp":max_temp, 
+    "alpha":alpha, #thermal comfort
+    "beta":beta, # energy consumption
+    "modelname": modelname,
+    "days":days,  
+    "hours":hours,  
+    "minutes":minutes,
+    "seconds":seconds,
+    "ep_timestep": ep_timestep
+        }
+        
 
 
     def reset(self,seed=None) ->  np.ndarray :
@@ -93,7 +104,6 @@ class EnergyPlusEnv(gym.Env):
         self.action_space.seed(seed)
 
         ## resetting
-        self.curr_obs = self.default_obs
         self.simtime = 0 # resetting simulation time tracker
 
 
@@ -105,6 +115,7 @@ class EnergyPlusEnv(gym.Env):
         opts['initialize'] = False
         simtime = 0
         self.model.initialize(simtime, self.timestop)
+        self.curr_obs = np.array(list(self.model.get(['Tair', 'RH', 'Tmrt', 'Tout', 'Qheat', 'Occ'])))
 
         return self.curr_obs
 

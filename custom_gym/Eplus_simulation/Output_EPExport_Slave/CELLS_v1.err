@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.18 15:09,
+Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.21 16:39,
    ** Warning ** Version: in IDF="9.3" not the same as expected="9.4"
    ** Warning ** Version: in IDF="9.3" not the same as expected="9.4"
    ** Warning ** ProcessScheduleInput: ExternalInterface:FunctionalMockupUnitExport:To:Schedule="CELLS:ROOMX1_DIETHEATING", Blank Schedule Type Limits Names input -- will not be validated.
@@ -39,14 +39,13 @@ Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.18 15:09,
    ************* All Return Air Paths passed integrity testing
    ************* No node connection errors were found.
    ************* Beginning Simulation
-   ** Warning ** Processing Monthly Tabular Reports: Variable names not valid for this simulation
-   **   ~~~   ** ...use Output:Diagnostics,DisplayExtraWarnings; to show more details on individual variables.
-   ** Severe  ** ExternalInterface: Socket communication received error value "-1" at time = 1666.66 hours.
-   **   ~~~   ** ExternalInterface: Flag from server " 0".
+   ** Severe  ** ExternalInterface: Did not find file "variables.cfg".
+   **   ~~~   ** This file needs to be in same directory as in.idf.
+   **   ~~~   ** Check the documentation for the ExternalInterface.
    **  Fatal  ** Error in ExternalInterface: Check EnergyPlus *.err file.
    ...Summary of Errors that led to program termination:
    ..... Reference severe error count=1
-   ..... Last severe error=ExternalInterface: Socket communication received error value "-1" at time = 1666.66 hours.
+   ..... Last severe error=ExternalInterface: Did not find file "variables.cfg".
    *************
    ************* ===== Recurring Error Summary =====
    ************* The following recurring error messages occurred.
@@ -65,6 +64,6 @@ Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.18 15:09,
    ************* ..extra time during simulation. Each construction is calculated by the algorithm indicated in the HeatBalanceAlgorithm
    ************* ..object. You may remove the constructions indicated (when you use the DisplayExtraWarnings option).
    *************
-   ************* EnergyPlus Warmup Error Summary. During Warmup: 0 Warning; 0 Severe Errors.
+   ************* EnergyPlus Warmup Error Summary. During Warmup: 0 Warning; 1 Severe Errors.
    ************* EnergyPlus Sizing Error Summary. During Sizing: 11 Warning; 0 Severe Errors.
-   ************* EnergyPlus Terminated--Fatal Error Detected. 15 Warning; 1 Severe Errors; Elapsed Time=00hr 04min 22.00sec
+   ************* EnergyPlus Terminated--Fatal Error Detected. 14 Warning; 1 Severe Errors; Elapsed Time=00hr 30min  0.50sec
