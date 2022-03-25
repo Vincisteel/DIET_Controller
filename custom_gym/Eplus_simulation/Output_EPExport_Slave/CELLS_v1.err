@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.21 16:39,
+Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.25 09:53,
    ** Warning ** Version: in IDF="9.3" not the same as expected="9.4"
    ** Warning ** Version: in IDF="9.3" not the same as expected="9.4"
    ** Warning ** ProcessScheduleInput: ExternalInterface:FunctionalMockupUnitExport:To:Schedule="CELLS:ROOMX1_DIETHEATING", Blank Schedule Type Limits Names input -- will not be validated.
@@ -66,4 +66,4 @@ Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.21 16:39,
    *************
    ************* EnergyPlus Warmup Error Summary. During Warmup: 0 Warning; 1 Severe Errors.
    ************* EnergyPlus Sizing Error Summary. During Sizing: 11 Warning; 0 Severe Errors.
-   ************* EnergyPlus Terminated--Fatal Error Detected. 14 Warning; 1 Severe Errors; Elapsed Time=00hr 30min  0.50sec
+   ************* EnergyPlus Terminated--Fatal Error Detected. 14 Warning; 1 Severe Errors; Elapsed Time=00hr 25min 11.96sec

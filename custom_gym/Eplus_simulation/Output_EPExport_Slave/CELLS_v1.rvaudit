@@ -4,7 +4,7 @@
  output file:CELLS_v1.csv
  getting all vars from:CELLS_v1.eso
   number variables requested for output=          26
- ReadVars Run Time=00hr 00min  8.48sec
+ ReadVars Run Time=00hr 00min  4.62sec
  ReadVarsESO program completed successfully.
  ReadVarsESO
  processing:.\CELLS_v1.mvi
@@ -12,5 +12,5 @@
  output file:CELLS_v1Meter.csv
  getting all vars from:CELLS_v1.mtr
   number variables requested for output=          20
- ReadVars Run Time=00hr 00min  6.03sec
+ ReadVars Run Time=00hr 00min  2.70sec
  ReadVarsESO program completed successfully.

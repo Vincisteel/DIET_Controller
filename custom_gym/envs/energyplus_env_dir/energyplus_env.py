@@ -1,4 +1,5 @@
 from ast import Str
+from tokenize import Double
 import gym
 import sys
 import os
@@ -72,20 +73,7 @@ class EnergyPlusEnv(gym.Env):
 
         self.curr_obs = None
 
-        self.log_dict={
-        "observation_dim":observation_dim,
-        "action_dim":action_dim,
-        "min_temp":min_temp, 
-    "max_temp":max_temp, 
-    "alpha":alpha, #thermal comfort
-    "beta":beta, # energy consumption
-    "modelname": modelname,
-    "days":days,  
-    "hours":hours,  
-    "minutes":minutes,
-    "seconds":seconds,
-    "ep_timestep": ep_timestep
-        }
+       
         
 
 
@@ -161,6 +149,31 @@ class EnergyPlusEnv(gym.Env):
         
         return next_state, reward, done, info
 
+
+    def __getattribute__(self, attr):
+        return object.__getattribute__(self, attr)
+
+    def __setattr__(self, attr, value):
+        object.__setattr__(self, attr, value)
+    
+
+    def log_dict(self):
+        log_dict={
+        "observation_dim":self.bservation_dim,
+        "action_dim":self.action_dim,
+        "min_temp":self.min_temp, 
+        "max_temp":self.max_temp, 
+        "alpha":self.alpha, #thermal comfort
+        "beta":self.beta, # energy consumption
+        "modelname": self.modelname,
+        "days":self.days,  
+        "hours":self.hours,  
+        "minutes":self.minutes,
+        "seconds":self.seconds,
+        "ep_timestep": self.ep_timestep
+        }
+
+        return log_dict
 
     def observation_to_dict(self,obs:Box) -> Dict[str, float]:
         """

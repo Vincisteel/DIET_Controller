@@ -1,4 +1,4 @@
-Program Version:,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.21 16:36
+Program Version:,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.25 10:00
 Tabular Output Report in Format: ,Comma
 
 Building:,Building
@@ -13,10 +13,10 @@ WARNING: THE REPORT DOES NOT REPRESENT A FULL ANNUAL SIMULATION.
 Site and Source Energy
 
 ,,Total Energy [kWh],Energy Per Total Building Area [kWh/m2],Energy Per Conditioned Building Area [kWh/m2]
-,Total Site Energy,1895.84,35.16,35.16
-,Net Site Energy,1895.84,35.16,35.16
-,Total Source Energy,6673.83,123.78,123.78
-,Net Source Energy,6673.83,123.78,123.78
+,Total Site Energy,1922.81,35.66,35.66
+,Net Site Energy,1922.81,35.66,35.66
+,Total Source Energy,6771.25,125.59,125.59
+,Net Source Energy,6771.25,125.59,125.59
 
 
 Site to Source Energy Conversion Factors
@@ -48,7 +48,7 @@ Building Area
 End Uses
 
 ,,Electricity [kWh],Natural Gas [kWh],Gasoline [kWh],Diesel [kWh],Coal [kWh],Fuel Oil No 1 [kWh],Fuel Oil No 2 [kWh],Propane [kWh],Other Fuel 1 [kWh],Other Fuel 2 [kWh],District Cooling [kWh],District Heating [kWh],Water [m3]
-,Heating,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,1500.42,0.00
+,Heating,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,1527.38,0.00
 ,Cooling,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00
 ,Interior Lighting,257.70,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00
 ,Exterior Lighting,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00
@@ -63,14 +63,14 @@ End Uses
 ,Refrigeration,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00
 ,Generators,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00
 ,,,,,,,,,,,,,,
-,Total End Uses,395.43,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,1500.42,0.00
+,Total End Uses,395.43,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,1527.38,0.00
 Note: District heat appears to be the principal heating source based on energy usage.
 
 
 End Uses By Subcategory
 
 ,,Subcategory,Electricity [kWh],Natural Gas [kWh],Gasoline [kWh],Diesel [kWh],Coal [kWh],Fuel Oil No 1 [kWh],Fuel Oil No 2 [kWh],Propane [kWh],Other Fuel 1 [kWh],Other Fuel 2 [kWh],District Cooling [kWh],District Heating [kWh],Water [m3]
-,Heating,General,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,1500.42,0.00
+,Heating,General,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,1527.38,0.00
 ,Cooling,General,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00
 ,Interior Lighting,General,257.70,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00
 ,Exterior Lighting,General,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00
@@ -91,18 +91,18 @@ Utility Use Per Conditioned Floor Area
 
 ,,Electricity Intensity [kWh/m2],Natural Gas Intensity [kWh/m2],Gasoline Intensity [kWh/m2],Diesel Intensity [kWh/m2],Coal Intensity [kWh/m2],Fuel Oil No 1 Intensity [kWh/m2],Fuel Oil No 2 Intensity [kWh/m2],Propane Intensity [kWh/m2],Other Fuel 1 Intensity [kWh/m2],Other Fuel 2 Intensity [kWh/m2],District Cooling Intensity [kWh/m2],District Heating Intensity [kWh/m2],Water Intensity [m3/m2]
 ,Lighting,4.78,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00
-,HVAC,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,27.83,0.00
+,HVAC,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,28.33,0.00
 ,Other,2.55,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00
-,Total,7.33,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,27.83,0.00
+,Total,7.33,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,28.33,0.00
 
 
 Utility Use Per Total Floor Area
 
 ,,Electricity Intensity [kWh/m2],Natural Gas Intensity [kWh/m2],Gasoline Intensity [kWh/m2],Diesel Intensity [kWh/m2],Coal Intensity [kWh/m2],Fuel Oil No 1 Intensity [kWh/m2],Fuel Oil No 2 Intensity [kWh/m2],Propane Intensity [kWh/m2],Other Fuel 1 Intensity [kWh/m2],Other Fuel 2 Intensity [kWh/m2],District Cooling Intensity [kWh/m2],District Heating Intensity [kWh/m2],Water Intensity [m3/m2]
 ,Lighting,4.78,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00
-,HVAC,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,27.83,0.00
+,HVAC,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,28.33,0.00
 ,Other,2.55,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00
-,Total,7.33,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,27.83,0.00
+,Total,7.33,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,28.33,0.00
 
 
 Electric Loads Satisfied
@@ -164,9 +164,9 @@ Setpoint Not Met Criteria
 Comfort and Setpoint Not Met Summary
 
 ,,Facility [Hours]
-,Time Setpoint Not Met During Occupied Heating,864.33
+,Time Setpoint Not Met During Occupied Heating,842.50
 ,Time Setpoint Not Met During Occupied Cooling,0.00
-,Time Not Comfortable Based on Simple ASHRAE 55-2004,1030.83
+,Time Not Comfortable Based on Simple ASHRAE 55-2004,1041.67
 
 
 Note 1: An asterisk (*) indicates that the feature is not yet implemented.
@@ -176,7 +176,7 @@ FOR:,Entire Facility
 General
 
 ,,Value
-,Program Version and Build,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.21 16:36
+,Program Version and Build,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.25 10:00
 ,RunPeriod,FRIBOURG (O1-O1:31-12)
 ,Weather File,Geneva AP GE CHE ISD-TMYx WMO#=067000
 ,Latitude [deg],46.24
@@ -515,20 +515,20 @@ Demand Controlled Ventilation using Controller:MechanicalVentilation
 Time Not Comfortable Based on Simple ASHRAE 55-2004
 
 ,,Winter Clothes [hr],Summer Clothes [hr],Summer or Winter Clothes [hr]
-,CELLS:ROOMX1,581.50,1003.17,451.00
-,CELLS:ENTRANCE,1034.00,1248.17,995.33
-,CELLS:ROOMX2,915.50,1139.67,873.83
-,Facility,1163.67,1277.33,1030.83
+,CELLS:ROOMX1,465.83,1023.00,355.33
+,CELLS:ENTRANCE,1038.00,1249.33,999.33
+,CELLS:ROOMX2,916.67,1138.83,874.17
+,Facility,1154.50,1282.67,1041.67
 Aggregated over the RunPeriods for Weather
 
 
 Time Setpoint Not Met
 
 ,,During Heating [hr],During Cooling [hr],During Occupied Heating [hr],During Occupied Cooling [hr]
-,CELLS:ROOMX1,2891.17,0.00,802.83,0.00
+,CELLS:ROOMX1,2659.33,0.00,800.50,0.00
 ,CELLS:ENTRANCE,12.00,0.00,0.00,0.00
-,CELLS:ROOMX2,196.00,0.00,196.00,0.00
-,Facility,2954.00,0.00,864.33,0.00
+,CELLS:ROOMX2,195.50,0.00,195.50,0.00
+,Facility,2702.33,0.00,842.50,0.00
 Aggregated over the RunPeriods for Weather
 
 
@@ -538,8 +538,8 @@ FOR:,Entire Facility
 Average Outdoor Air During Occupied Hours
 
 ,,Average Number of Occupants,Nominal Number of Occupants,Zone Volume [m3],Mechanical Ventilation [ach],Infiltration [ach],AFN Infiltration [ach],Simple Ventilation [ach]
-,CELLS:ROOMX1,0.90,1.35,58.82,0.557,0.315,0.000,1.328
-,CELLS:ENTRANCE,1.12,1.50,46.39,0.876,0.312,0.000,0.122
+,CELLS:ROOMX1,0.90,1.35,58.82,0.558,0.315,0.000,1.319
+,CELLS:ENTRANCE,1.12,1.50,46.39,0.876,0.313,0.000,0.123
 ,CELLS:ROOMX2,0.95,1.43,61.92,0.553,0.312,0.000,0.099
 Values shown for a single zone without multipliers
 
@@ -603,26 +603,26 @@ FOR:,Entire Facility
 Annual Building Sensible Heat Gain Components
 
 ,,HVAC Zone Eq & Other Sensible Air Heating [kWh],HVAC Zone Eq & Other Sensible Air Cooling [kWh],HVAC Terminal Unit Sensible Air Heating [kWh],HVAC Terminal Unit Sensible Air Cooling [kWh],HVAC Input Heated Surface Heating [kWh],HVAC Input Cooled Surface Cooling [kWh],People Sensible Heat Addition [kWh],Lights Sensible Heat Addition [kWh],Equipment Sensible Heat Addition [kWh],Window Heat Addition [kWh],Interzone Air Transfer Heat Addition [kWh],Infiltration Heat Addition [kWh],Opaque Surface Conduction and Other Heat Addition [kWh],Equipment Sensible Heat Removal [kWh],Window Heat Removal [kWh],Interzone Air Transfer Heat Removal [kWh],Infiltration Heat Removal [kWh],Opaque Surface Conduction and Other Heat Removal [kWh]
-,CELLS:ROOMX1,768.344,-21.26,0.000,0.000,0.000,0.000,76.722,38.996,44.881,370.725,0.000,0.015,0.084,0.000,-143.32,0.000,-585.39,-549.70
-,CELLS:ENTRANCE,275.356,-35.67,0.000,0.000,0.000,0.000,123.739,176.503,45.609,0.000,0.000,0.148,0.000,0.000,0.000,0.000,-193.69,-391.99
-,CELLS:ROOMX2,276.223,-29.61,0.000,0.000,0.000,0.000,92.023,42.199,47.241,388.159,0.000,0.117,0.078,0.000,-126.56,0.000,-244.18,-445.61
-,Total Facility,1319.923,-86.55,0.000,0.000,0.000,0.000,292.483,257.698,137.731,758.884,0.000,0.280,0.162,0.000,-269.89,0.000,-1023.26,-1387.30
+,CELLS:ROOMX1,811.927,-14.41,0.000,0.000,0.000,0.000,74.975,38.996,44.881,368.859,0.000,0.009,0.084,0.000,-146.39,0.000,-595.51,-583.33
+,CELLS:ENTRANCE,267.451,-35.66,0.000,0.000,0.000,0.000,123.774,176.503,45.609,0.000,0.000,0.150,0.000,0.000,0.000,0.000,-194.08,-383.74
+,CELLS:ROOMX2,275.827,-29.56,0.000,0.000,0.000,0.000,92.028,42.199,47.241,388.161,0.000,0.118,0.078,0.000,-126.61,0.000,-244.23,-445.18
+,Total Facility,1355.204,-79.64,0.000,0.000,0.000,0.000,290.777,257.698,137.731,757.020,0.000,0.277,0.162,0.000,-273.00,0.000,-1033.82,-1412.25
 
 
 Peak Cooling Sensible Heat Gain Components
 
 ,,Time of Peak {TIMESTAMP},HVAC Zone Eq & Other Sensible Air Heating [W],HVAC Zone Eq & Other Sensible Air Cooling [W],HVAC Terminal Unit Sensible Air Heating [W],HVAC Terminal Unit Sensible Air Cooling [W],HVAC Input Heated Surface Heating [W],HVAC Input Cooled Surface Cooling [W],People Sensible Heat Addition [W],Lights Sensible Heat Addition [W],Equipment Sensible Heat Addition [W],Window Heat Addition [W],Interzone Air Transfer Heat Addition [W],Infiltration Heat Addition [W],Opaque Surface Conduction and Other Heat Addition [W],Equipment Sensible Heat Removal [W],Window Heat Removal [W],Interzone Air Transfer Heat Removal [W],Infiltration Heat Removal [W],Opaque Surface Conduction and Other Heat Removal [W]
-,CELLS:ROOMX1,05-JAN-07:11,0.00,-389.91,0.00,0.00,0.00,0.00,26.06,34.54,11.39,0.00,0.00,0.00,525.54,0.00,-92.98,0.00,-114.64,0.00
-,CELLS:ENTRANCE,20-MAR-16:22,0.00,-237.68,0.00,0.00,0.00,0.00,129.46,136.19,29.93,0.00,0.00,0.00,6.75,0.00,-0.00,0.00,-64.66,0.00
-,CELLS:ROOMX2,29-MAY-08:10,0.00,-194.05,0.00,0.00,0.00,0.00,113.07,18.18,59.92,259.71,0.00,0.00,0.00,0.00,-0.00,0.00,-71.93,-184.89
-,Total Facility,29-MAY-09:01,0.00,-554.68,0.00,0.00,0.00,0.00,335.75,171.63,146.78,404.76,0.00,0.00,952.67,0.00,0.00,0.00,-1456.91,0.00
+,CELLS:ROOMX1,23-JAN-07:11,0.00,-351.14,0.00,0.00,0.00,0.00,27.01,34.54,11.39,0.00,0.00,0.00,411.76,0.00,-59.71,0.00,-73.84,0.00
+,CELLS:ENTRANCE,20-MAR-16:36,0.00,-237.46,0.00,0.00,0.00,0.00,130.98,136.19,29.93,0.00,0.00,0.00,4.99,0.00,-0.00,0.00,-64.63,0.00
+,CELLS:ROOMX2,29-MAY-08:70,0.00,-194.04,0.00,0.00,0.00,0.00,112.91,18.18,59.92,259.67,0.00,0.00,0.00,0.00,-0.00,0.00,-71.93,-184.71
+,Total Facility,29-MAY-08:25,0.00,-560.54,0.00,0.00,0.00,0.00,347.03,171.63,146.78,542.08,0.00,0.00,0.00,0.00,0.00,0.00,-188.23,-458.76
 
 
 Peak Heating Sensible Heat Gain Components
 
 ,,Time of Peak {TIMESTAMP},HVAC Zone Eq & Other Sensible Air Heating [W],HVAC Zone Eq & Other Sensible Air Cooling [W],HVAC Terminal Unit Sensible Air Heating [W],HVAC Terminal Unit Sensible Air Cooling [W],HVAC Input Heated Surface Heating [W],HVAC Input Cooled Surface Cooling [W],People Sensible Heat Addition [W],Lights Sensible Heat Addition [W],Equipment Sensible Heat Addition [W],Window Heat Addition [W],Interzone Air Transfer Heat Addition [W],Infiltration Heat Addition [W],Opaque Surface Conduction and Other Heat Addition [W],Equipment Sensible Heat Removal [W],Window Heat Removal [W],Interzone Air Transfer Heat Removal [W],Infiltration Heat Removal [W],Opaque Surface Conduction and Other Heat Removal [W]
-,CELLS:ROOMX1,13-APR-08:10,1650.57,0.00,0.00,0.00,0.00,0.00,92.45,17.27,56.93,123.18,0.00,0.00,14.70,0.00,-0.00,0.00,-1955.09,0.00
-,CELLS:ENTRANCE,31-JAN-05:25,1303.57,0.00,0.00,0.00,0.00,0.00,0.00,0.00,1.61,0.00,0.00,0.00,0.00,0.00,-0.00,0.00,-99.31,-1205.87
+,CELLS:ROOMX1,20-JAN-14:10,1697.16,0.00,0.00,0.00,0.00,0.00,92.79,17.27,56.93,190.04,0.00,0.00,111.58,0.00,-0.00,0.00,-2165.76,0.00
+,CELLS:ENTRANCE,03-JAN-05:23,1300.78,0.00,0.00,0.00,0.00,0.00,0.00,0.00,1.61,0.00,0.00,0.00,0.00,0.00,-0.00,0.00,-98.03,-1204.37
 ,CELLS:ROOMX2,02-JAN-07:55,679.56,0.00,0.00,0.00,0.00,0.00,30.03,36.35,11.98,0.00,0.00,0.00,0.00,0.00,-78.66,0.00,-102.02,-577.25
 ,Total Facility,02-JAN-07:55,2745.87,0.00,0.00,0.00,0.00,0.00,91.18,207.08,53.30,0.00,0.00,0.00,0.00,0.00,-161.22,0.00,-328.31,-2607.90
 
