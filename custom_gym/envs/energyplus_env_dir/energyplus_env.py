@@ -30,8 +30,8 @@ class EnergyPlusEnv(gym.Env):
     def __init__(self,
     observation_dim:int = 6,
     action_dim:int = 200, 
-    min_temp:int = 12, 
-    max_temp:int = 30, 
+    min_temp:int = 16, 
+    max_temp:int = 21, 
     alpha:float = 1, #thermal comfort
     beta:float = 1, # energy consumption
     modelname: str = 'CELLS_v1',
@@ -45,6 +45,11 @@ class EnergyPlusEnv(gym.Env):
 
         ## parameters for the EnergyPlus FMU simulation
         self.modelname=modelname
+        self.days = days
+        self.hours = hours
+        self.minutes = minutes
+        self.seconds=seconds
+        self.ep_timestep= ep_timestep
         self.simulation_path = simulation_path
         self.numsteps = days * hours * ep_timestep       # total number of simulation steps during the simulationx
         self.timestop = days * hours * minutes * seconds # total time length of our simulation
@@ -52,6 +57,8 @@ class EnergyPlusEnv(gym.Env):
         self.simtime = 0                                 # keeps track of current time in the simulation
         self.model = None
 
+        self.min_temp = min_temp
+        self.max_temp = max_temp
 
         ## parameters for dimensions of the state and reward function
         self.observation_dim = observation_dim
@@ -64,11 +71,6 @@ class EnergyPlusEnv(gym.Env):
 
         self.action_space = Discrete(action_dim)
         self.observation_space = Box(low=-np.inf,high=np.inf,shape=(self.observation_dim,))
-
-      
-
-        ## mapping between discrete space and temperature
-        self.action_to_temp = np.linspace(min_temp,max_temp,action_dim)
 
 
         self.curr_obs = None
@@ -93,6 +95,9 @@ class EnergyPlusEnv(gym.Env):
 
         ## resetting
         self.simtime = 0 # resetting simulation time tracker
+
+        ## mapping between discrete space and temperature
+        self.action_to_temp = np.linspace(self.min_temp,self.max_temp,self.action_dim)
 
 
         ## getting to the right place for loading
@@ -214,7 +219,7 @@ class EnergyPlusEnv(gym.Env):
         qheat_in = dict_values["qheat_in"]
         occ_in = dict_values["occ_in"]
 
-        reward = beta * (1 - (qheat_in/15000)) + alpha * (1 - ((pmv + 0.5) ** 2)) * occ_in
+        reward = beta * (1 - (qheat_in/(800*1000))) + alpha * (1 - abs((pmv + 0.5))) * occ_in
 
         return reward
 

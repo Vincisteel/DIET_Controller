@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.03.25 13:33,
+Program Version,EnergyPlus, Version 9.4.0-998c4b761e, YMD=2022.04.01 19:53,
 Var Type (reported time step),Var Report Type,Variable Name [Units]
 Zone,Average,Site Outdoor Air Drybulb Temperature [C]
 Zone,Average,Site Outdoor Air Dewpoint Temperature [C]

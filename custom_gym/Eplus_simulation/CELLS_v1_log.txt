@@ -1,0 +1,2 @@
+FMIL: module = Slave, log level = 2: [error][FMU status:Error] fmiInstantiateSlave: Could not create the output directory C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\custom_gym\Eplus_simulation\Output_EPExport_Slave. Instantiation of Slave failed.
+
