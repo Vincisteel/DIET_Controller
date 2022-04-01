@@ -1,19 +1,25 @@
-utilSocket: Establishing socket based on file socket.cfg.
-Getting socket port number.
-Received socket port number 56295.
-Socket port number = 56295.
-WinSock DLL is acceptable.
-Socket opened, sockfd = 640.
+*** BCVTB client log file.
+*************************.
+Writing to socket at time = 6.000000e+05
 Assembling buffer.
-Write to socket with fd = 640
-Buffer        = @2 -10 
+Write to socket with fd = 692
+Buffer        = 2 0 6 0 0 6.000000000000000e+05 1.264964308146280e+01 3.547082869168842e+01 1.339713225473232e+01 -1.609424993401317e+00 0.000000000000000e+00 0.000000000000000e+00 
 
-Wrote 8 characters to socket.
-sendclientmessage wrote flag -10, return value = 8.
-In readbufferfromsocket: Read -1 chars, maximum is 0.
+Wrote 166 characters to socket.
+Reading from socket.
+In readbufferfromsocket: Read -1 chars, maximum is 21644.
+Error reading: WSAGetLastError = 10054
+Finished exchanging data with socket: simTimRea=0.000000e+00, flag=-1.
 Assembling buffer.
-Write to socket with fd = 640
-Buffer        = f62952 -1 
+Write to socket with fd = 692
+Buffer        = 2 -20 
+
+Error writing to socket: Return value = -1.
+Error writing to socket: WSAGetLastError = 10054
+sendclientmessage wrote flag -20, return value = -1.
+Assembling buffer.
+Write to socket with fd = 692
+Buffer        = 2 -1 
 
 Error writing to socket: Return value = -1.
 Error writing to socket: WSAGetLastError = 10054

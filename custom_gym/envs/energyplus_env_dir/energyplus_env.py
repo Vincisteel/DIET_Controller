@@ -159,7 +159,7 @@ class EnergyPlusEnv(gym.Env):
 
     def log_dict(self):
         log_dict={
-        "observation_dim":self.bservation_dim,
+        "observation_dim":self.observation_dim,
         "action_dim":self.action_dim,
         "min_temp":self.min_temp, 
         "max_temp":self.max_temp, 
