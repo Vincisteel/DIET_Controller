@@ -76,7 +76,14 @@ class EnergyPlusEnv(gym.Env):
         self.curr_obs = None
 
        
+    ## python helper functions for easy change of parameters i.e. env.min_temp = 16
         
+    def __getattribute__(self, attr):
+        return object.__getattribute__(self, attr)
+
+    def __setattr__(self, attr, value):
+        object.__setattr__(self, attr, value)
+    
 
 
     def reset(self,seed=None) ->  np.ndarray :
@@ -107,7 +114,7 @@ class EnergyPlusEnv(gym.Env):
         opts['ncp'] = self.numsteps  # Specifies the number of timesteps
         opts['initialize'] = False
         simtime = 0
-        self.model.initialize(simtime, self.timestop)
+        self.model.initialize(simtime, self.timestop,)
         self.curr_obs = np.array(list(self.model.get(['Tair', 'RH', 'Tmrt', 'Tout', 'Qheat', 'Occ'])))
 
         return self.curr_obs
@@ -155,12 +162,6 @@ class EnergyPlusEnv(gym.Env):
         return next_state, reward, done, info
 
 
-    def __getattribute__(self, attr):
-        return object.__getattribute__(self, attr)
-
-    def __setattr__(self, attr, value):
-        object.__setattr__(self, attr, value)
-    
 
     def log_dict(self):
         log_dict={

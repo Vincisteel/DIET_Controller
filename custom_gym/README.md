@@ -1,4 +1,4 @@
-This is a custom Open AI Gym environment interacting with the TRNSYS software.
+This is a custom Open AI Gym environment interacting with the EnergyPlus software.
 
 
 Credits to the OpenAi Gym documentation: https://www.gymlibrary.ml/#

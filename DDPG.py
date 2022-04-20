@@ -98,6 +98,9 @@ class DDPG(object):
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters())
         self.max_action = max_action
 
+
+        
+
     def select_action(self, state):
         state = torch.Tensor(state.reshape(1, -1)).to(device)
         return self.actor(state).cpu().data.numpy().flatten()
