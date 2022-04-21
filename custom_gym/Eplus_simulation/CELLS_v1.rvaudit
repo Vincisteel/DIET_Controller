@@ -1,4 +1,4 @@
-Wed 03/02/2022  1:45:32.28 ReadVars 
+Thu 04/21/2022 13:51:09.06 ReadVars 
  ReadVarsESO
  getting all vars from:eplusout.eso
  EOF encountered during read of ESO header records
@@ -13,4 +13,4 @@ Wed 03/02/2022  1:45:32.28 ReadVars
  EOF encountered during read of ESO header records
  probable EnergyPlus error condition -- check eplusout.err
  ReadVarsESO program terminated.
- ReadVars Run Time=00hr 00min  0.02sec
+ ReadVars Run Time=00hr 00min  0.03sec

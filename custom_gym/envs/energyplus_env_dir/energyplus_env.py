@@ -28,13 +28,13 @@ class EnergyPlusEnv(gym.Env):
     
 
     def __init__(self,
-    observation_dim:int = 6,
-    action_dim:int = 200, 
-    min_temp:int = 16, 
+    param_list:List[str] = ['Tair', 'RH', 'Tmrt', 'Tout', 'Qheat', 'Occ'] , # what we get from the model at each step
+    action_dim:int = 200, # 
+    min_temp:int = 16, # minimum temperature for action
     max_temp:int = 21, 
     alpha:float = 1, #thermal comfort
     beta:float = 1, # energy consumption
-    modelname: str = 'CELLS_v1',
+    modelname: str = 'CELLS_v1.fmu',
     simulation_path:str= r'C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\custom_gym\Eplus_simulation',
     days:int = 151,  
     hours:int = 24,  
@@ -45,12 +45,14 @@ class EnergyPlusEnv(gym.Env):
 
         ## parameters for the EnergyPlus FMU simulation
         self.modelname=modelname
+        self.simulation_path = simulation_path
+
         self.days = days
         self.hours = hours
         self.minutes = minutes
         self.seconds=seconds
         self.ep_timestep= ep_timestep
-        self.simulation_path = simulation_path
+
         self.numsteps = days * hours * ep_timestep       # total number of simulation steps during the simulationx
         self.timestop = days * hours * minutes * seconds # total time length of our simulation
         self.secondstep = self.timestop / self.numsteps  # length of a single step in seconds
@@ -61,18 +63,17 @@ class EnergyPlusEnv(gym.Env):
         self.max_temp = max_temp
 
         ## parameters for dimensions of the state and reward function
-        self.observation_dim = observation_dim
         self.action_dim = action_dim
         self.alpha = alpha
         self.beta = beta
 
-        ## discretizing the continuous temperature interval
-        ## and defining action and observation spaces
+        ## defines the data that we fetch from the model at each step to build our observation
+        self.param_list = param_list
+        self.observation_dim = len(self.param_list)
 
-        self.action_space = Discrete(action_dim)
-        self.observation_space = Box(low=-np.inf,high=np.inf,shape=(self.observation_dim,))
-
-
+   
+        self.action_space = None
+        self.observation_space = None
         self.curr_obs = None
 
        
@@ -93,29 +94,36 @@ class EnergyPlusEnv(gym.Env):
         Returns:
             np.array: Element of self.observation_space, representing the HVAC environment dynamics
         """
+
+        ## discretizing the continuous temperature interval
+        ## and defining action and observation spaces
+        self.action_space = Discrete(self.action_dim)
+        self.observation_space = Box(low=-np.inf,high=np.inf,shape=(self.observation_dim,))
+        ## mapping between discrete space and temperature
+        self.action_to_temp = np.linspace(self.min_temp,self.max_temp,self.action_dim)
+
         ## seeding
         if seed is None:
             seed=42
-
         self.observation_space.seed(seed)
         self.action_space.seed(seed)
 
+
         ## resetting
         self.simtime = 0 # resetting simulation time tracker
-
-        ## mapping between discrete space and temperature
-        self.action_to_temp = np.linspace(self.min_temp,self.max_temp,self.action_dim)
+    
 
 
         ## getting to the right place for loading
         os.chdir(self.simulation_path)
-        self.model = load_fmu(self.modelname + '.fmu')
+        self.model = load_fmu(self.modelname)
         opts = self.model.simulate_options()  # Get the default options
         opts['ncp'] = self.numsteps  # Specifies the number of timesteps
         opts['initialize'] = False
         simtime = 0
-        self.model.initialize(simtime, self.timestop,)
-        self.curr_obs = np.array(list(self.model.get(['Tair', 'RH', 'Tmrt', 'Tout', 'Qheat', 'Occ'])))
+        self.model.initialize(simtime, self.timestop, opts)
+        self.curr_obs = np.array(list(self.model.get(self.param_list)))
+        
 
         return self.curr_obs
 
