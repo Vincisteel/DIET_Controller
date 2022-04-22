@@ -121,7 +121,7 @@ class EnergyPlusEnv(gym.Env):
         opts['ncp'] = self.numsteps  # Specifies the number of timesteps
         opts['initialize'] = False
         simtime = 0
-        self.model.initialize(simtime, self.timestop, opts)
+        self.model.initialize(simtime, self.timestop)
         self.curr_obs = np.array(list(self.model.get(self.param_list)))
         
 
@@ -155,7 +155,7 @@ class EnergyPlusEnv(gym.Env):
 
         self.model.set('Thsetpoint_diet', action_temperature)
         res = self.model.do_step(current_t=self.simtime, step_size=self.secondstep, new_step=True)
-        self.curr_obs = np.array(list(self.model.get(['Tair', 'RH', 'Tmrt', 'Tout', 'Qheat', 'Occ'])))
+        self.curr_obs = np.array(list(self.model.get(self.param_list)))
 
         self.simtime += self.secondstep
 
@@ -197,14 +197,7 @@ class EnergyPlusEnv(gym.Env):
             obs (np.array): observation of the environment, must be an element of self.observation_space
         """
 
-        dict_values = {
-            "tair_in":obs[0],
-            "rh_in": obs[1],
-            "tmrt_in": obs[2],
-            "tout":obs[3],
-            "qheat_in": obs[4],
-            "occ_in": obs[5]
-        }
+        dict_values = {self.param_list[i]:obs[i] for i in range(len(self.param_list))}
 
         return dict_values
 
@@ -225,8 +218,8 @@ class EnergyPlusEnv(gym.Env):
         pmv = self.comfPMV(obs)
 
         dict_values= self.observation_to_dict(obs)
-        qheat_in = dict_values["qheat_in"]
-        occ_in = dict_values["occ_in"]
+        qheat_in = dict_values["Qheat"]
+        occ_in = dict_values["Occ"]
 
         reward = beta * (1 - (qheat_in/(800*1000))) + alpha * (1 - abs((pmv + 0.5))) * occ_in
 
@@ -237,10 +230,11 @@ class EnergyPlusEnv(gym.Env):
         
         dict_values= self.observation_to_dict(obs)
 
-        ta = dict_values["tair_in"]
-        tr = dict_values["tmrt_in"]
+
+        ta = dict_values["Tair"]
+        tr = dict_values["Tmrt"]
         vel= 0.1
-        rh = dict_values["rh_in"]
+        rh = dict_values["RH"]
         met =1.1
         clo = 1
         wme=0
