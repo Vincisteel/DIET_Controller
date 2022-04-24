@@ -119,8 +119,10 @@ class EnergyPlusEnv(gym.Env):
         self.model = load_fmu(self.modelname)
         opts = self.model.simulate_options()  # Get the default options
         opts['ncp'] = self.numsteps  # Specifies the number of timesteps
-        opts['initialize'] = False
+        opts['initialize'] = True
         simtime = 0
+        self.model.reset()
+        self.model.instantiate_slave()
         self.model.initialize(simtime, self.timestop)
         self.curr_obs = np.array(list(self.model.get(self.param_list)))
         
@@ -158,8 +160,7 @@ class EnergyPlusEnv(gym.Env):
         self.curr_obs = np.array(list(self.model.get(self.param_list)))
 
         self.simtime += self.secondstep
-
-
+   
         next_state = self.curr_obs
         
         ## defines whether it's time to reset the environment or not
