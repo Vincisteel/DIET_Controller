@@ -59,11 +59,11 @@ class EnergyPlusEnv(gym.Env):
         self.simtime = 0                                 # keeps track of current time in the simulation
         self.model = None
 
-        self.min_temp = min_temp
-        self.max_temp = max_temp
+        self._min_temp = min_temp
+        self._max_temp = max_temp
 
         ## parameters for dimensions of the state and reward function
-        self.action_dim = action_dim
+        self._action_dim = action_dim
         self.alpha = alpha
         self.beta = beta
 
@@ -72,18 +72,45 @@ class EnergyPlusEnv(gym.Env):
         self.observation_dim = len(self.param_list)
 
    
-        self.action_space = None
-        self.observation_space = None
+        self.action_space = Discrete(self._action_dim)
+        self.observation_space = Box(low=-np.inf,high=np.inf,shape=(self.observation_dim,))
+        self.action_to_temp = np.linspace(self._min_temp,self._max_temp,self._action_dim)
         self.curr_obs = None
 
-       
-    ## python helper functions for easy change of parameters i.e. env.min_temp = 16
-        
-    def __getattribute__(self, attr):
-        return object.__getattribute__(self, attr)
 
-    def __setattr__(self, attr, value):
-        object.__setattr__(self, attr, value)
+## critical attributes that affect multiple variables when modified, thus we set properties
+    
+    @property
+    def action_dim(self):
+        return self._action_dim
+    
+    @property
+    def min_temp(self):
+        return self._min_temp
+    
+    @property
+    def max_temp(self):
+        return self._max_temp
+
+    
+    def set_action_dim(self,dim):
+        self._action_dim = dim
+        self.action_space = Discrete(self._action_dim)
+        self.action_to_temp = np.linspace(self._min_temp,self._max_temp,self._action_dim)
+
+
+    def set_arguments(self,env_arguments:Dict[str,Any]):
+        for k,v in env_arguments.items():
+            if k == "action_dim":
+                self.set_action_dim(v)
+            elif k == "min_temp":
+                self._min_temp = v
+                self.action_to_temp = np.linspace(self._min_temp,self._max_temp,self._action_dim)
+            elif k == "max_temp":
+                self._max_temp = v
+                self.action_to_temp = np.linspace(self._min_temp,self._max_temp,self._action_dim)
+            else:
+                setattr(self,k,v)
     
 
 
@@ -97,10 +124,11 @@ class EnergyPlusEnv(gym.Env):
 
         ## discretizing the continuous temperature interval
         ## and defining action and observation spaces
-        self.action_space = Discrete(self.action_dim)
-        self.observation_space = Box(low=-np.inf,high=np.inf,shape=(self.observation_dim,))
+
         ## mapping between discrete space and temperature
-        self.action_to_temp = np.linspace(self.min_temp,self.max_temp,self.action_dim)
+        print(f"Env action_dim {self._action_dim}")
+        print(f" BETA {self.beta}")
+
 
         ## seeding
         if seed is None:
@@ -175,9 +203,9 @@ class EnergyPlusEnv(gym.Env):
     def log_dict(self):
         log_dict={
         "observation_dim":self.observation_dim,
-        "action_dim":self.action_dim,
-        "min_temp":self.min_temp, 
-        "max_temp":self.max_temp, 
+        "action_dim":self._action_dim,
+        "min_temp":self._min_temp, 
+        "max_temp":self._max_temp, 
         "alpha":self.alpha, #thermal comfort
         "beta":self.beta, # energy consumption
         "modelname": self.modelname,
