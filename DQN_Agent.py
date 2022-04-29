@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 import torch
 import torch.nn as nn
 import numpy as np
@@ -48,15 +48,17 @@ class DQNAgent:
     def __init__(
         self, 
         env: gym.Env,
-        memory_size: int,
-        batch_size: int,
-        target_update: int,
-        epsilon_decay: float,
+        memory_size: int = 1000,
+        batch_size: int = 32,
+        target_update: int = 100,
+        epsilon_decay: float = 1/20000,
         max_epsilon: float = 1.0,
         min_epsilon: float = 0.1,
         gamma: float = 0.99,
         inside_dim:int = 128, ## dimension of the hidden layers of the network
-        num_hidden_layers:int = 1
+        num_hidden_layers:int = 1,
+        seed:int = 778,
+        dict_arguments:Dict[str,Any] = None ## easy way to set arguments when using blackbox optimization
     ):
         """Initialization.
         
@@ -71,15 +73,11 @@ class DQNAgent:
             min_epsilon (float): min value of epsilon
             gamma (float): discount factor
         """
-        ## dimensions for the network
-        obs_dim = env.observation_dim
-        action_dim = env.action_dim
+  
 
-        print(f"Agent Action_dim{action_dim}")
         
         self.env = env
         self.memory_size = memory_size
-        self.memory = ReplayBuffer(obs_dim, memory_size, batch_size)
         self.batch_size = batch_size
         self.epsilon = max_epsilon
         self.epsilon_decay = epsilon_decay
@@ -87,17 +85,41 @@ class DQNAgent:
         self.min_epsilon = min_epsilon
         self.target_update = target_update
         self.gamma = gamma
+        self.seed = seed
+        self.inside_dim = inside_dim
+        self.num_hidden_layers = num_hidden_layers
+
+
+
+        if dict_arguments is not None:
+            ## set arguments given in directory
+                for k,v in dict_arguments.items():
+                    setattr(self,k,v)
+
+
+        ## seeding the agent
+        self.seed_agent(self.seed)
         
         # device: cpu / gpu
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu"
         )
 
+
+        ## dimensions for the network
+        obs_dim = self.env.observation_dim
+        action_dim = self.env.action_dim
+
+        ## setting up memory
+        self.memory = ReplayBuffer(obs_dim, memory_size, batch_size)
+
+
+        print(f"Agent Action_dim{ action_dim}")
+
+
         # networks: dqn, dqn_target
-        self.inside_dim = inside_dim
-        self.num_hidden_layers = num_hidden_layers
-        self.dqn = Network(obs_dim, action_dim,inside_dim=inside_dim, num_hidden_layers=num_hidden_layers).to(self.device)
-        self.dqn_target = Network(obs_dim, action_dim,inside_dim=inside_dim, num_hidden_layers=num_hidden_layers).to(self.device)
+        self.dqn = Network(obs_dim, action_dim,inside_dim=self.inside_dim, num_hidden_layers=self.num_hidden_layers).to(self.device)
+        self.dqn_target = Network(obs_dim, action_dim,inside_dim=self.inside_dim, num_hidden_layers=self.num_hidden_layers).to(self.device)
         self.dqn_target.load_state_dict(self.dqn.state_dict())
         self.dqn_target.eval()
         
@@ -167,7 +189,7 @@ class DQNAgent:
                 num_iterations=self.env.numsteps
 
         if num_iterations > self.env.numsteps:
-                print(f"WARNING: Number of iterations chosen ({num_iterations})is higher than the number of steps of the environment ({self.env.numsteps}) ")
+                print(f"WARNING: Number of iterations chosen ({num_iterations}) is higher than the number of steps of the environment ({self.env.numsteps}) ")
                 num_iterations=self.env.numsteps
         
         ## instantiate logger
@@ -183,6 +205,8 @@ class DQNAgent:
         rewards = []
         occ = []
 
+        total_cum_reward = 0
+        total_cum_heat = 0
 
 
         for episode_num in range(num_episodes):
@@ -205,11 +229,14 @@ class DQNAgent:
 
                 ## keeping track of the value we've seen
                 rewards.append(reward)
+                total_cum_reward += float(reward)
                 actions.append(self.env.action_to_temp[action])
                 pmv.append(info['pmv'][0])
                 d = self.env.observation_to_dict(next_state)
                 tair.append(d["Tair"][0])
-                qheat.append(d["Qheat"][0])
+                heat = d["Qheat"][0]
+                total_cum_heat += float(heat)
+                qheat.append(heat)
                 occ.append(d["Occ"][0])
 
                 state = next_state
@@ -245,12 +272,20 @@ class DQNAgent:
                  qheat[lower:upper], rewards[lower:upper], occ[lower:upper],losses[lower:upper], epsilons[lower:upper],
                  self)
 
+        
+
+
+        # plot a summary that contatenates all episodes together for a complete overview of the training
         if log and num_episodes > 1:
             logger.plot_and_logging(episode_num,tair, actions, pmv,
                  qheat, rewards, occ,losses, epsilons,
                  self, is_summary=True)
 
         #self.env.close()
+
+        results_path = logger.RESULT_PATH
+
+        return total_cum_reward, total_cum_heat, results_path
                 
 
     def _compute_dqn_loss(self, samples: Dict[str, np.ndarray]) -> torch.Tensor:
@@ -281,6 +316,19 @@ class DQNAgent:
         self.dqn_target.load_state_dict(self.dqn.state_dict())
 
 
+
+    def seed_agent(self,seed):
+
+        torch.manual_seed(seed)
+        if torch.backends.cudnn.enabled:
+            torch.backends.cudnn.benchmark = False
+            torch.backends.cudnn.deterministic = True
+
+        np.random.seed(seed)
+
+        return
+
+
     # Making a save method to save a trained model
     def save(self, filename, directory):
         torch.save(self.dqn.state_dict(), '%s/%s_dqn.pth' % (directory, filename))
@@ -301,7 +349,8 @@ class DQNAgent:
         "min_epsilon": self.min_epsilon,
         "gamma": self.gamma,
         "inside_dim": self.inside_dim,
-        "num_hidden_layers": self.num_hidden_layers
+        "num_hidden_layers": self.num_hidden_layers,
+        "seed": self.seed
         }
        
 

@@ -59,11 +59,11 @@ class EnergyPlusEnv(gym.Env):
         self.simtime = 0                                 # keeps track of current time in the simulation
         self.model = None
 
-        self._min_temp = min_temp
-        self._max_temp = max_temp
+        self.min_temp = min_temp
+        self.max_temp = max_temp
 
         ## parameters for dimensions of the state and reward function
-        self._action_dim = action_dim
+        self.action_dim = action_dim
         self.alpha = alpha
         self.beta = beta
 
@@ -72,31 +72,17 @@ class EnergyPlusEnv(gym.Env):
         self.observation_dim = len(self.param_list)
 
    
-        self.action_space = Discrete(self._action_dim)
+        self.action_space = Discrete(self.action_dim)
         self.observation_space = Box(low=-np.inf,high=np.inf,shape=(self.observation_dim,))
-        self.action_to_temp = np.linspace(self._min_temp,self._max_temp,self._action_dim)
+        self.action_to_temp = np.linspace(self.min_temp,self.max_temp,self.action_dim)
         self.curr_obs = None
 
 
-## critical attributes that affect multiple variables when modified, thus we set properties
-    
-    @property
-    def action_dim(self):
-        return self._action_dim
-    
-    @property
-    def min_temp(self):
-        return self._min_temp
-    
-    @property
-    def max_temp(self):
-        return self._max_temp
-
     
     def set_action_dim(self,dim):
-        self._action_dim = dim
-        self.action_space = Discrete(self._action_dim)
-        self.action_to_temp = np.linspace(self._min_temp,self._max_temp,self._action_dim)
+        self.action_dim = dim
+        self.action_space = Discrete(self.action_dim)
+        self.action_to_temp = np.linspace(self.min_temp,self.max_temp,self.action_dim)
 
 
     def set_arguments(self,env_arguments:Dict[str,Any]):
@@ -104,11 +90,11 @@ class EnergyPlusEnv(gym.Env):
             if k == "action_dim":
                 self.set_action_dim(v)
             elif k == "min_temp":
-                self._min_temp = v
-                self.action_to_temp = np.linspace(self._min_temp,self._max_temp,self._action_dim)
+                self.min_temp = v
+                self.action_to_temp = np.linspace(self.min_temp,self.max_temp,self.action_dim)
             elif k == "max_temp":
-                self._max_temp = v
-                self.action_to_temp = np.linspace(self._min_temp,self._max_temp,self._action_dim)
+                self.max_temp = v
+                self.action_to_temp = np.linspace(self.min_temp,self.max_temp,self.action_dim)
             else:
                 setattr(self,k,v)
     
@@ -126,7 +112,7 @@ class EnergyPlusEnv(gym.Env):
         ## and defining action and observation spaces
 
         ## mapping between discrete space and temperature
-        print(f"Env action_dim {self._action_dim}")
+        print(f"Env action_dim {self.action_dim}")
         print(f" BETA {self.beta}")
 
 
@@ -203,9 +189,9 @@ class EnergyPlusEnv(gym.Env):
     def log_dict(self):
         log_dict={
         "observation_dim":self.observation_dim,
-        "action_dim":self._action_dim,
-        "min_temp":self._min_temp, 
-        "max_temp":self._max_temp, 
+        "action_dim":self.action_dim,
+        "min_temp":self.min_temp, 
+        "max_temp":self.max_temp, 
         "alpha":self.alpha, #thermal comfort
         "beta":self.beta, # energy consumption
         "modelname": self.modelname,
@@ -218,7 +204,7 @@ class EnergyPlusEnv(gym.Env):
 
         return log_dict
 
-    def observation_to_dict(self,obs:Box) -> Dict[str, float]:
+    def observation_to_dict(self,obs:np.ndarray) -> Dict[str, float]:
         """
         Given an np.array of the current observation, returns a dictionary with the key being the string description of each element
 

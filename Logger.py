@@ -18,7 +18,10 @@ import pandas as pd
 
 class Logger:
 
-    def __init__(self,logging_path,num_episodes, num_iterations):
+    def __init__(self,
+    logging_path:str,
+    num_episodes:int,
+    num_iterations:int):
 
         self.num_episodes = num_episodes
         self.num_iterations = num_iterations
@@ -254,7 +257,9 @@ class Logger:
         f = open(f"{self.RESULT_PATH}/env_params_{self.time}.json","w")
         log_dict = agent.log_dict()
         log_dict["num_episodes"] = self.num_episodes
-        log_dict["num_iterations"] = self.num_iterations 
+        log_dict["num_iterations"] = self.num_iterations
+        
+        
         log_dict["pmvs"] = self.pmv_percentages(np.array(pmv)).to_dict()['ranges']
         ## concatenate the two dicts
         log_dict = {**log_dict, **agent.env.log_dict()} 
