@@ -6,6 +6,8 @@ from pathlib import Path
 from collections import namedtuple
 from itertools import product
 import numpy as np
+import pandas as pd
+import sys
 
 Parameter = namedtuple('Parameter', ['name', 'value'])
 
@@ -29,7 +31,7 @@ Parameter = namedtuple('Parameter', ['name', 'value'])
 # path_list = search_paths(searching_directory,conditions)
 
 
-def search_paths(searching_directory, conditions):
+def search_paths(searching_directory, conditions, top_k = 1):
 
     ## list of paths satisfiying the conditions
     path_list=[]
@@ -48,28 +50,29 @@ def search_paths(searching_directory, conditions):
                     if k != "pmv":
                         a = log_dict[k]
                         comparator, b = conditions[k]
-                        if not comparison(a,b,comparator=comparator):
+                        if not(comparison(a,b,comparator=comparator)):
                             failed = True
                             break
                     else:
                         for k in conditions["pmv"]:
                             a = log_dict["pmvs"][k]
                         comparator, b = conditions["pmv"][k]
-                        if not comparison(a,b,comparator=comparator):
+                        if not(comparison(a,b,comparator=comparator)):
                             failed = True
                             break
 
-                if not failed:
+                if not(failed):
                     path_list.append(path)
-                    reward_list.append(log_dict["final_reward"])
-                    cum_heat_list.append(log_dict["final_cumulative_heating"])
+                    reward_list.append(log_dict["final_reward"]/log_dict["num_episodes"])
+                    cum_heat_list.append(log_dict["final_cumulative_heating"]/log_dict["num_episodes"])
 
     
+    path_list = np.array(path_list)
     reward_list=np.array(reward_list)
     cum_heat_list= np.array(cum_heat_list)
 
-    best_reward_path = path_list[np.argmax(reward_list)]
-    best_heat_path = path_list[np.argmax(cum_heat_list)]
+    best_reward_path = path_list[np.flip(np.argsort(reward_list))[:top_k]]
+    best_heat_path = path_list[np.flip(np.argsort(cum_heat_list))[:top_k]]
 
     return path_list, best_reward_path, best_heat_path
 
@@ -77,7 +80,6 @@ def search_paths(searching_directory, conditions):
 
     
 def comparison(a,b, comparator:str):
-
     if comparator == "=":
         return a == b
     elif comparator == "<":
@@ -110,3 +112,21 @@ def all_combinations_list(arguments:Dict[str, List[Any]]):
         argument_list.append({param.name: param.value for param in params})
 
     return argument_list
+
+
+
+def assess_performance(path:str, column = "reward", window = 1000):
+
+    res = {}
+
+    for path in Path(path).glob("**/*.csv"):
+        df = pd.read_csv(path)
+        # only assessing performance when occupancy isn't zero
+        df = df[df.occ != 0.0]
+
+        iqr = df[column].rolling(window=1000).aggregate(lambda x: x.quantile(0.75) - x.quantile(0.25)).mean()
+
+        res[path] = iqr
+
+    return res
+

@@ -179,7 +179,7 @@ class DQNAgent:
 
         return loss.item()
         
-    def train(self,num_iterations= None, num_episodes= 1, log=True):
+    def train(self, logging_path:str, num_iterations= None, num_episodes= 1, log=True):
         """Train the agent."""
         self.is_test = False
 
@@ -193,8 +193,7 @@ class DQNAgent:
                 num_iterations=self.env.numsteps
         
         ## instantiate logger
-        logging_path = os.getcwd()
-        logger = Logger(logging_path= logging_path,num_episodes=num_episodes, num_iterations=num_iterations)
+        logger = Logger(logging_path= logging_path, num_episodes=num_episodes, num_iterations=num_iterations)
 
         epsilons = []
         losses = []

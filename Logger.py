@@ -250,6 +250,8 @@ class Logger:
         epsilons = pad_epsilon + epsilons
         data = pd.DataFrame({"loss": losses, "epsilon":epsilons, "tair":tair, "action":actions,
         "pmv":pmv, "qheat":qheat,"reward":rewards, "occ":occ})
+
+        data["reward"]= data.reward.apply(lambda x: float(x[0]))
         data.to_csv(f"{self.RESULT_PATH}/experiments_csv/experiments_results_{suffix}.csv")
 
         ## saving parameters of environment

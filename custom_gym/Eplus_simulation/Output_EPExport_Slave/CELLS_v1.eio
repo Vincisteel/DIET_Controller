@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 9.3.0-baff08990c, YMD=2022.04.29 18:04
+Program Version,EnergyPlus, Version 9.3.0-baff08990c, YMD=2022.05.03 00:13
 ! <Version>, Version ID
  Version, 9.3
 ! <Timesteps per Hour>, #TimeSteps, Minutes per TimeStep {minutes}
@@ -412,4 +412,24 @@ Frame/Divider Surface,1,Frame,CELLS:ROOMX2_WALL_3_0_0_0_0_1_WIN,Window5 Detailed
 Frame/Divider Surface,1,Divider:DividedLite,CELLS:ROOMX2_WALL_3_0_0_0_0_1_WIN,,,N/A,N/A,,4.66E-002,4.66E-002,*,N/A,N/A,2.00E-002,N/A
 HeatTransfer Surface,CELLS:ROOMX2_WALL_3_0_0_1_0_0_WIN,Window,CELLS:ROOMX2_WALL_3_0_0,Window5 Detailed Fenestration,1001,N/A,0.600,No,2.98,3.05,3.05,0.00,90.00,1.75,1.75,0.00,ExternalEnvironment,DOE-2,ASHRAETARP,SunExposed,WindExposed,0.50,0.50,0.61,0.39,4
 Frame/Divider Surface,1,Frame,CELLS:ROOMX2_WALL_3_0_0_1_0_0_WIN,Window5 Detailed Fenestration,,N/A,N/A,,0.29,0.29,*,N/A,N/A,4.00E-002,N/A
-Frame/Divider Surface,1,Divider:DividedLite,CELLS:ROOMX2_WALL_3_0_0_1_0_0_WIN,,,N/A,N/A,,6.94E-002,6.94E-002,*,N/A,N/A,2.
+Frame/Divider Surface,1,Divider:DividedLite,CELLS:ROOMX2_WALL_3_0_0_1_0_0_WIN,,,N/A,N/A,,6.94E-002,6.94E-002,*,N/A,N/A,2.00E-002,N/A
+HeatTransfer Surface,CELLS:ROOMX2_WALL_5_0_0,Wall,,CTF - ConductionTransferFunction,CELLS_EXTERNAL_WALL_ROOM2,0.173,0.169,,5.42,10.00,5.90,180.00,90.00,3.23,3.10,0.00,ExternalEnvironment,DOE-2,ASHRAETARP,SunExposed,WindExposed,0.50,0.50,0.63,0.37,4
+HeatTransfer Surface,CELLS:ROOMX2_WALL_5_0_0_0_0_1_WIN,Window,CELLS:ROOMX2_WALL_5_0_0,Window5 Detailed Fenestration,1001,N/A,0.600,No,1.01,1.06,1.06,180.00,90.00,0.61,1.75,0.00,ExternalEnvironment,DOE-2,ASHRAETARP,SunExposed,WindExposed,0.50,0.50,0.65,0.35,4
+Frame/Divider Surface,1,Frame,CELLS:ROOMX2_WALL_5_0_0_0_0_1_WIN,Window5 Detailed Fenestration,,N/A,N/A,,0.19,0.19,*,N/A,N/A,4.00E-002,N/A
+Frame/Divider Surface,1,Divider:DividedLite,CELLS:ROOMX2_WALL_5_0_0_0_0_1_WIN,,,N/A,N/A,,4.66E-002,4.66E-002,*,N/A,N/A,2.00E-002,N/A
+HeatTransfer Surface,CELLS:ROOMX2_WALL_5_0_0_1_0_0_WIN,Window,CELLS:ROOMX2_WALL_5_0_0,Window5 Detailed Fenestration,1001,N/A,0.600,No,2.98,3.05,3.05,180.00,90.00,1.75,1.75,0.00,ExternalEnvironment,DOE-2,ASHRAETARP,SunExposed,WindExposed,0.50,0.50,0.60,0.40,4
+Frame/Divider Surface,1,Frame,CELLS:ROOMX2_WALL_5_0_0_1_0_0_WIN,Window5 Detailed Fenestration,,N/A,N/A,,0.29,0.29,*,N/A,N/A,4.00E-002,N/A
+Frame/Divider Surface,1,Divider:DividedLite,CELLS:ROOMX2_WALL_5_0_0_1_0_0_WIN,,,N/A,N/A,,6.94E-002,6.94E-002,*,N/A,N/A,2.00E-002,N/A
+HeatTransfer Surface,CELLS:ROOMX2_EXTFLOOR_0_0_0,Floor,,CTF - ConductionTransferFunction,CELLS_EXTARNAL_FLOOR,9.284E-002,9.079E-002,,19.97,19.97,19.97,0.00,180.00,3.23,6.19,0.00,ExternalEnvironment,DOE-2,ASHRAETARP,SunExposed,WindExposed,1.00,0.00,1.00,0.00,4
+HeatTransfer Surface,CELLS:ROOMX2_ROOF_1_0_0,Roof,,CTF - ConductionTransferFunction,CELLS_ROOF,0.181,0.175,,19.97,19.97,19.97,180.00,0.00,3.23,6.19,0.00,ExternalEnvironment,DOE-2,ASHRAETARP,SunExposed,WindExposed,0.00,1.00,0.00,1.00,4
+! <Environment>,Environment Name,Environment Type, Start Date, End Date, Start DayOfWeek, Duration {#days}, Source:Start DayOfWeek,  Use Daylight Saving, Use Holidays, Apply Weekend Holiday Rule,  Use Rain Values, Use Snow Values, Sky Temperature Model
+! <Environment:Special Days>, Special Day Name, Special Day Type, Source, Start Date, Duration {#days}
+! <Environment:Daylight Saving>, Daylight Saving Indicator, Source, Start Date, End Date
+! <Environment:WarmupDays>, NumberofWarmupDays
+Environment,FRIBOURG (O1-O1:31-12),WeatherFileRunPeriod,01/01/2017,05/31/2017,Sunday,151,Use RunPeriod Specified Day,No,No,Yes,Yes,Yes,Clark and Allen
+Environment:Daylight Saving,Yes,InputFile,03/26,10/29
+Environment:WarmupDays,  9
+! <Warmup Convergence Information>,Zone Name,Environment Type/Name,Average Warmup Temperature Difference {deltaC},Std Dev Warmup Temperature Difference {deltaC},Max Temperature Pass/Fail Convergence,Min Temperature Pass/Fail Convergence,Average Warmup Load Difference {W},Std Dev Warmup Load Difference {W},Heating Load Pass/Fail Convergence,Cooling Load Pass/Fail Convergence
+ Warmup Convergence Information,CELLS:ROOMX1,RunPeriod: FRIBOURG (O1-O1:31-12),5.0334046702E-002,6.5598950415E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,CELLS:ENTRANCE,RunPeriod: FRIBOURG (O1-O1:31-12),1.4679615548E-015,1.4249330623E-015,Pass,Pass,8.0007144508E-003,6.7846928438E-003,Pass,Pass
+ Warmup Convergence Information,CELLS:ROOMX2,RunPeriod: FRIBOURG (O1-O1:31-12),4.9027486134E-002,6.3331348155E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass

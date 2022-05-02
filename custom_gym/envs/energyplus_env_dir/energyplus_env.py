@@ -217,7 +217,7 @@ class EnergyPlusEnv(gym.Env):
         return dict_values
 
 
-    def compute_reward(self,obs: np.ndarray, alpha: float, beta:float):
+    def compute_reward(self, obs: np.ndarray, alpha: float, beta:float):
         """
         Given an observation of the environment, computes the reward
         based on energy consumption and thermal comfort 
@@ -236,7 +236,7 @@ class EnergyPlusEnv(gym.Env):
         qheat_in = dict_values["Qheat"]
         occ_in = dict_values["Occ"]
 
-        reward = beta * (1 - (qheat_in/(800*1000))) + alpha * (1 - abs((pmv + 0.5))) * occ_in
+        reward = beta * (1 - (qheat_in/(800*1000))) + alpha * (1 - abs((pmv + 0.5)))* occ_in
 
         return reward
 
