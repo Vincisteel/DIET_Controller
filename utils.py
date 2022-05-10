@@ -71,8 +71,10 @@ def search_paths(searching_directory, conditions, top_k = 1):
     reward_list=np.array(reward_list)
     cum_heat_list= np.array(cum_heat_list)
 
+    # flip because we want the biggest reward
     best_reward_path = path_list[np.flip(np.argsort(reward_list))[:top_k]]
-    best_heat_path = path_list[np.flip(np.argsort(cum_heat_list))[:top_k]]
+    
+    best_heat_path = path_list[np.argsort(cum_heat_list)[:top_k]]
 
     return path_list, best_reward_path, best_heat_path
 
