@@ -1,5 +1,6 @@
 import logging
 from typing import Dict, List, Tuple, Any
+from pyrsistent import T
 import torch
 import torch.nn as nn
 import numpy as np
@@ -179,7 +180,7 @@ class DQNAgent:
 
         return loss.item()
         
-    def train(self, logging_path:str, num_iterations= None, num_episodes= 1, log=True):
+    def train(self, logging_path:str, num_iterations= None, num_episodes= 1, log=True) -> Tuple[str,pd.DataFrame]:
         """Train the agent."""
         self.is_test = False
 
@@ -195,6 +196,8 @@ class DQNAgent:
         ## instantiate logger
         logger = Logger(logging_path= logging_path, num_episodes=num_episodes, num_iterations=num_iterations)
 
+        summary_df:pd.DataFrame = pd.DataFrame()
+
         epsilons = []
         losses = []
         tair = []
@@ -203,9 +206,6 @@ class DQNAgent:
         qheat = []
         rewards = []
         occ = []
-
-        total_cum_reward = 0
-        total_cum_heat = 0
 
 
         for episode_num in range(num_episodes):
@@ -228,13 +228,11 @@ class DQNAgent:
 
                 ## keeping track of the value we've seen
                 rewards.append(reward)
-                total_cum_reward += float(reward)
                 actions.append(self.env.action_to_temp[action])
                 pmv.append(info['pmv'][0])
                 d = self.env.observation_to_dict(next_state)
                 tair.append(d["Tair"][0])
                 heat = d["Qheat"][0]
-                total_cum_heat += float(heat)
                 qheat.append(heat)
                 occ.append(d["Occ"][0])
 
@@ -267,7 +265,7 @@ class DQNAgent:
             upper = (episode_num+1)*num_iterations
 
             if log:
-                logger.plot_and_logging(episode_num, tair[lower:upper],actions[lower:upper], pmv[lower:upper],
+                summary_df = logger.plot_and_logging(episode_num, tair[lower:upper],actions[lower:upper], pmv[lower:upper],
                  qheat[lower:upper], rewards[lower:upper], occ[lower:upper],losses[lower:upper], epsilons[lower:upper],
                  self)
 
@@ -276,7 +274,7 @@ class DQNAgent:
 
         # plot a summary that contatenates all episodes together for a complete overview of the training
         if log and num_episodes > 1:
-            logger.plot_and_logging(episode_num,tair, actions, pmv,
+            summary_df = logger.plot_and_logging(episode_num,tair, actions, pmv,
                  qheat, rewards, occ,losses, epsilons,
                  self, is_summary=True)
 
@@ -284,7 +282,7 @@ class DQNAgent:
 
         results_path = logger.RESULT_PATH
 
-        return total_cum_reward, total_cum_heat, results_path
+        return (results_path, summary_df)
                 
 
     def _compute_dqn_loss(self, samples: Dict[str, np.ndarray]) -> torch.Tensor:

@@ -235,11 +235,7 @@ class Logger:
 
         self._plot(epsilons,losses,tair,actions,pmv,qheat,rewards,occ,plot_filename = plot_filename, title=plot_title)
 
-        plot_title= f"Number of hours the algorithm spent in different PMV intervals"
-        plot_title = plot_title + " (Total)" if is_summary else "" 
 
-        self.plot_pmv_percentages(pmv=np.array(pmv),savepath=f"{self.RESULT_PATH}/plots/pmv_categories", 
-        title = f"PMV_Categories_{suffix}", plot_title= plot_title)
 
         ## padding losses and epsilons so that they fit into dataframe
 
@@ -253,6 +249,15 @@ class Logger:
 
         data["reward"]= data.reward.apply(lambda x: float(x[0]))
         data.to_csv(f"{self.RESULT_PATH}/experiments_csv/experiments_results_{suffix}.csv")
+
+
+        ## PLOTTING PMV INTERVALS
+        plot_title= f"Number of hours the algorithm spent in different PMV intervals"
+        plot_title = plot_title + " (Total)" if is_summary else "" 
+
+        ## only keep pmv when occupancy > 0
+        self.plot_pmv_percentages(pmv=np.array(data[data.occ > 0]["pmv"]),savepath=f"{self.RESULT_PATH}/plots/pmv_categories", 
+        title = f"PMV_Categories_{suffix}", plot_title= plot_title)
 
         ## saving parameters of environment
         
@@ -276,4 +281,6 @@ class Logger:
         f.write(json.dumps(log_dict,indent=True))
         f.close()
         agent.save(directory=f"{self.RESULT_PATH}/model_weights",filename=f"torch_ep_{suffix}")
+
+        return data
         

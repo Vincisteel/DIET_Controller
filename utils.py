@@ -117,18 +117,5 @@ def all_combinations_list(arguments:Dict[str, List[Any]]):
 
 
 
-def assess_performance(path:str, column = "reward", window = 1000):
 
-    res = {}
-
-    for path in Path(path).glob("**/*.csv"):
-        df = pd.read_csv(path)
-        # only assessing performance when occupancy isn't zero
-        df = df[df.occ != 0.0]
-
-        iqr = df[column].rolling(window=1000).aggregate(lambda x: x.quantile(0.75) - x.quantile(0.25)).mean()
-
-        res[path] = iqr
-
-    return res
 
