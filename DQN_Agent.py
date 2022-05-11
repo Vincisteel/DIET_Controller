@@ -59,7 +59,7 @@ class DQNAgent:
         inside_dim:int = 128, ## dimension of the hidden layers of the network
         num_hidden_layers:int = 1,
         seed:int = 778,
-        dict_arguments:Dict[str,Any] = None ## easy way to set arguments when using blackbox optimization
+        dict_arguments:Dict[str,Any] = {} ## easy way to set arguments when using blackbox optimization
     ):
         """Initialization.
         
@@ -259,6 +259,91 @@ class DQNAgent:
                     # if hard update is needed
                     if update_cnt % self.target_update == 0:
                         self._target_hard_update()
+            
+            ## slicing lower and upper bound
+            lower = episode_num*num_iterations
+            upper = (episode_num+1)*num_iterations
+
+            if log:
+                summary_df = logger.plot_and_logging(episode_num, tair[lower:upper],actions[lower:upper], pmv[lower:upper],
+                 qheat[lower:upper], rewards[lower:upper], occ[lower:upper],losses[lower:upper], epsilons[lower:upper],
+                 self)
+
+        
+
+
+        # plot a summary that contatenates all episodes together for a complete overview of the training
+        if log and num_episodes > 1:
+            summary_df = logger.plot_and_logging(episode_num,tair, actions, pmv,
+                 qheat, rewards, occ,losses, epsilons,
+                 self, is_summary=True)
+
+        #self.env.close()
+
+        results_path = logger.RESULT_PATH
+
+        return (results_path, summary_df)
+
+
+
+    def test(self, logging_path:str, num_iterations= None, num_episodes= 1, log=True) -> Tuple[str,pd.DataFrame]:
+        """Test the agent."""
+        self.is_test = True
+
+
+        ## check num_iterations
+        if num_iterations is None:
+                num_iterations=self.env.numsteps
+
+        if num_iterations > self.env.numsteps:
+                print(f"WARNING: Number of iterations chosen ({num_iterations}) is higher than the number of steps of the environment ({self.env.numsteps}) ")
+                num_iterations=self.env.numsteps
+        
+        ## instantiate logger
+        logger = Logger(logging_path= logging_path, num_episodes=num_episodes, num_iterations=num_iterations)
+
+        summary_df:pd.DataFrame = pd.DataFrame()
+
+        epsilons = []
+        losses = []
+        tair = []
+        actions = []
+        pmv = []
+        qheat = []
+        rewards = []
+        occ = []
+
+
+        for episode_num in range(num_episodes):
+        
+            
+            state = self.env.reset()
+            ## chdir back to logging path otherwise then we recall train() mutliple times, the  os.getcwd() will have moved
+            os.chdir(logging_path)
+
+
+            ## to keep track of number of updates and update target network accordingly
+            update_cnt = 0
+
+            for i in range(num_iterations):
+
+                action = self.select_action(state)
+                next_state, reward, done,info = self.step(action)
+
+                if i % 100 == 0:
+                    print(f"Iteration{i}")
+
+                ## keeping track of the value we've seen
+                rewards.append(reward)
+                actions.append(self.env.action_to_temp[action])
+                pmv.append(info['pmv'][0])
+                d = self.env.observation_to_dict(next_state)
+                tair.append(d["Tair"][0])
+                heat = d["Qheat"][0]
+                qheat.append(heat)
+                occ.append(d["Occ"][0])
+
+                state = next_state
             
             ## slicing lower and upper bound
             lower = episode_num*num_iterations
