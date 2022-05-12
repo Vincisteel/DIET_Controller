@@ -2,8 +2,8 @@
 *************************.
 Writing to socket at time = 1.304640e+07
 Assembling buffer.
-Write to socket with fd = 740
-Buffer        = 2 0 6 0 0 1.304640000000000e+07 1.959132423482008e+01 5.864027167564825e+01 1.996566158641415e+01 1.389057500659868e+01 0.000000000000000e+00 0.000000000000000e+00 
+Write to socket with fd = 688
+Buffer        = 2 0 6 0 0 1.304640000000000e+07 1.959038327453016e+01 5.864384678142426e+01 1.996468270235282e+01 1.389057500659868e+01 0.000000000000000e+00 0.000000000000000e+00 
 
 Wrote 165 characters to socket.
 Reading from socket.
@@ -11,14 +11,14 @@ In readbufferfromsocket: Read -1 chars, maximum is 21644.
 Error reading: WSAGetLastError = 10054
 Finished exchanging data with socket: simTimRea=0.000000e+00, flag=-1.
 Assembling buffer.
-Write to socket with fd = 740
+Write to socket with fd = 688
 Buffer        = 2 -20 
 
 Error writing to socket: Return value = -1.
 Error writing to socket: WSAGetLastError = 10054
 sendclientmessage wrote flag -20, return value = -1.
 Assembling buffer.
-Write to socket with fd = 740
+Write to socket with fd = 688
 Buffer        = 2 -1 
 
 Error writing to socket: Return value = -1.

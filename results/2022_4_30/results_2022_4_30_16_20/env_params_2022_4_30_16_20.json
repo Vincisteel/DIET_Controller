@@ -34,5 +34,6 @@
  "seconds": 60,
  "ep_timestep": 6,
  "final_reward": 72248.99796257992,
- "final_cumulative_heating": 3635832056.3187656
+ "final_cumulative_heating": 3635832056.3187656,
+ "is_test": false
 }
