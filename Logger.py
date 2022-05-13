@@ -4,7 +4,6 @@ import torch.nn.functional as F
 import torch.optim as optim
 from datetime import datetime
 import json
-import seaborn as sns
 import matplotlib.pyplot as plt
 
 import plotly.graph_objects as go
@@ -15,7 +14,9 @@ import pandas as pd
 
 
 class Logger:
-    def __init__(self, logging_path: str, num_episodes: int, num_iterations: int):
+    def __init__(
+        self, logging_path: str, agent_name: str, num_episodes: int, num_iterations: int
+    ):
 
         self.num_episodes = num_episodes
         self.num_iterations = num_iterations
@@ -24,11 +25,15 @@ class Logger:
         temp = list([date.year, date.month, date.day, date.hour, date.minute])
         temp = [str(x) for x in temp]
         self.time = "_".join(temp)
-        self.GENERAL_PATH = (
-            f"{logging_path}/results/{str(date.year)}_{str(date.month)}_{str(date.day)}"
+        self.GENERAL_PATH = f""
+
+        self.TIME_PATH = f"{str(date.year)}_{str(date.month)}_{str(date.day)}"
+        self.RESULT_PATH = (
+            f"{logging_path}/results/{agent_name}/{self.TIME_PATH}/results_{self.time}"
         )
-        self.RESULT_PATH = f"{self.GENERAL_PATH}/results_{self.time}"
-        self.PERFORMANCE_PATH = f"{self.GENERAL_PATH}/performance_results"
+        self.PERFORMANCE_PATH = (
+            f"{logging_path}/results/{agent_name}/performance_results"
+        )
 
         ## create directories
         os.makedirs(self.RESULT_PATH, exist_ok=True)

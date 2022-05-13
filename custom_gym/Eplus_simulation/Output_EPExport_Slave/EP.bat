@@ -1,1 +1,0 @@
-energyplus -w runweafile.epw -p CELLS_v1 -s C -x -m -r CELLS_v1.idf

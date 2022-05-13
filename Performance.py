@@ -98,6 +98,7 @@ def across_runs(
     agent_arguments: Dict[str, Any],
     parameter: Tuple[str, List[Any]],
     logging_path: str,
+    agent_name: str,
     num_episodes: int,
     utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
     alpha=0.05,
@@ -150,6 +151,7 @@ def across_runs(
 
     logger = Logger(
         logging_path=logging_path,
+        agent_name=agent_name,
         num_episodes=num_episodes,
         num_iterations=env.numsteps,
     )

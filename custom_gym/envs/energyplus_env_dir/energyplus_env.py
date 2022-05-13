@@ -16,6 +16,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.offline as pyo
 
+
 class EnergyPlusEnv(gym.Env):
 
     """
@@ -25,38 +26,51 @@ class EnergyPlusEnv(gym.Env):
     hours = Number of hours each day the simulation is run for
     ep_timestep =Number of timesteps per hour
     """
-    
 
-    def __init__(self,
-    param_list:List[str] = ['Tair', 'RH', 'Tmrt', 'Tout', 'Qheat', 'Occ'] , # what we get from the model at each step
-    action_dim:int = 200, # 
-    min_temp:int = 16, # minimum temperature for action
-    max_temp:int = 21, 
-    alpha:float = 1, #thermal comfort
-    beta:float = 1, # energy consumption
-    modelname: str = 'CELLS_v1.fmu',
-    simulation_path:str= r'C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\custom_gym\Eplus_simulation',
-    days:int = 151,  
-    hours:int = 24,  
-    minutes:int = 60,
-    seconds:int = 60,
-    ep_timestep:int = 6):
-
+    def __init__(
+        self,
+        param_list: List[str] = [
+            "Tair",
+            "RH",
+            "Tmrt",
+            "Tout",
+            "Qheat",
+            "Occ",
+        ],  # what we get from the model at each step
+        action_dim: int = 200,  #
+        min_temp: int = 16,  # minimum temperature for action
+        max_temp: int = 21,
+        alpha: float = 1,  # thermal comfort
+        beta: float = 1,  # energy consumption
+        modelname: str = "CELLS_v1.fmu",
+        simulation_path: str = r"C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\Eplus_simulation",
+        days: int = 151,
+        hours: int = 24,
+        minutes: int = 60,
+        seconds: int = 60,
+        ep_timestep: int = 6,
+    ):
 
         ## parameters for the EnergyPlus FMU simulation
-        self.modelname=modelname
+        self.modelname = modelname
         self.simulation_path = simulation_path
 
         self.days = days
         self.hours = hours
         self.minutes = minutes
-        self.seconds=seconds
-        self.ep_timestep= ep_timestep
+        self.seconds = seconds
+        self.ep_timestep = ep_timestep
 
-        self.numsteps = days * hours * ep_timestep       # total number of simulation steps during the simulationx
-        self.timestop = days * hours * minutes * seconds # total time length of our simulation
-        self.secondstep = self.timestop / self.numsteps  # length of a single step in seconds
-        self.simtime = 0                                 # keeps track of current time in the simulation
+        self.numsteps = (
+            days * hours * ep_timestep
+        )  # total number of simulation steps during the simulationx
+        self.timestop = (
+            days * hours * minutes * seconds
+        )  # total time length of our simulation
+        self.secondstep = (
+            self.timestop / self.numsteps
+        )  # length of a single step in seconds
+        self.simtime = 0  # keeps track of current time in the simulation
         self.model = None
 
         self.min_temp = min_temp
@@ -71,36 +85,36 @@ class EnergyPlusEnv(gym.Env):
         self.param_list = param_list
         self.observation_dim = len(self.param_list)
 
-   
         self.action_space = Discrete(self.action_dim)
-        self.observation_space = Box(low=-np.inf,high=np.inf,shape=(self.observation_dim,))
-        self.action_to_temp = np.linspace(self.min_temp,self.max_temp,self.action_dim)
+        self.observation_space = Box(
+            low=-np.inf, high=np.inf, shape=(self.observation_dim,)
+        )
+        self.action_to_temp = np.linspace(self.min_temp, self.max_temp, self.action_dim)
         self.curr_obs = None
 
-
-    
-    def set_action_dim(self,dim):
+    def set_action_dim(self, dim):
         self.action_dim = dim
         self.action_space = Discrete(self.action_dim)
-        self.action_to_temp = np.linspace(self.min_temp,self.max_temp,self.action_dim)
+        self.action_to_temp = np.linspace(self.min_temp, self.max_temp, self.action_dim)
 
-
-    def set_arguments(self,env_arguments:Dict[str,Any]):
-        for k,v in env_arguments.items():
+    def set_arguments(self, env_arguments: Dict[str, Any]):
+        for k, v in env_arguments.items():
             if k == "action_dim":
                 self.set_action_dim(v)
             elif k == "min_temp":
                 self.min_temp = v
-                self.action_to_temp = np.linspace(self.min_temp,self.max_temp,self.action_dim)
+                self.action_to_temp = np.linspace(
+                    self.min_temp, self.max_temp, self.action_dim
+                )
             elif k == "max_temp":
                 self.max_temp = v
-                self.action_to_temp = np.linspace(self.min_temp,self.max_temp,self.action_dim)
+                self.action_to_temp = np.linspace(
+                    self.min_temp, self.max_temp, self.action_dim
+                )
             else:
-                setattr(self,k,v)
-    
+                setattr(self, k, v)
 
-
-    def reset(self,seed=None) ->  np.ndarray :
+    def reset(self, seed=None) -> np.ndarray:
         """
         Resets the environment to an initial state and returns an initial observation.
 
@@ -115,37 +129,30 @@ class EnergyPlusEnv(gym.Env):
         print(f"Env action_dim {self.action_dim}")
         print(f" BETA {self.beta}")
 
-
         ## seeding
         if seed is None:
-            seed=42
+            seed = 42
         self.observation_space.seed(seed)
         self.action_space.seed(seed)
 
-
         ## resetting
-        self.simtime = 0 # resetting simulation time tracker
-    
-
+        self.simtime = 0  # resetting simulation time tracker
 
         ## getting to the right place for loading
         os.chdir(self.simulation_path)
         self.model = load_fmu(self.modelname)
         opts = self.model.simulate_options()  # Get the default options
-        opts['ncp'] = self.numsteps  # Specifies the number of timesteps
-        opts['initialize'] = True
+        opts["ncp"] = self.numsteps  # Specifies the number of timesteps
+        opts["initialize"] = True
         simtime = 0
         self.model.reset()
         self.model.instantiate_slave()
         self.model.initialize(simtime, self.timestop)
         self.curr_obs = np.array(list(self.model.get(self.param_list)))
-        
 
         return self.curr_obs
 
-
-
-    def step(self, action: Discrete) -> Tuple[np.ndarray,float,bool,dict]:
+    def step(self, action: Discrete) -> Tuple[np.ndarray, float, bool, dict]:
         """
 
         Run one timestep of the environment’s dynamics. When end of episode is reached, you are responsible for calling reset() to reset this environment’s state. 
@@ -164,48 +171,47 @@ class EnergyPlusEnv(gym.Env):
         """
 
         pmv = self.comfPMV(self.curr_obs)
-        reward = self.compute_reward(self.curr_obs,self.alpha,self.beta)
-
+        reward = self.compute_reward(self.curr_obs, self.alpha, self.beta)
 
         action_temperature = self.action_to_temp[action]
 
-        self.model.set('Thsetpoint_diet', action_temperature)
-        res = self.model.do_step(current_t=self.simtime, step_size=self.secondstep, new_step=True)
+        self.model.set("Thsetpoint_diet", action_temperature)
+        res = self.model.do_step(
+            current_t=self.simtime, step_size=self.secondstep, new_step=True
+        )
         self.curr_obs = np.array(list(self.model.get(self.param_list)))
 
         self.simtime += self.secondstep
-   
+
         next_state = self.curr_obs
-        
+
         ## defines whether it's time to reset the environment or not
-        done = (self.simtime == self.timestop)
+        done = self.simtime == self.timestop
         ## debugging dict
-        info = {'Simtime':self.simtime,'pmv':pmv}
-        
+        info = {"Simtime": self.simtime, "pmv": pmv}
+
         return next_state, reward, done, info
 
-
-
     def log_dict(self):
-        log_dict={
-        "param_list": self.param_list,
-        "observation_dim":self.observation_dim,
-        "action_dim":self.action_dim,
-        "min_temp":self.min_temp, 
-        "max_temp":self.max_temp, 
-        "alpha":self.alpha, #thermal comfort
-        "beta":self.beta, # energy consumption
-        "modelname": self.modelname,
-        "days":self.days,  
-        "hours":self.hours,  
-        "minutes":self.minutes,
-        "seconds":self.seconds,
-        "ep_timestep": self.ep_timestep
+        log_dict = {
+            "param_list": self.param_list,
+            "observation_dim": self.observation_dim,
+            "action_dim": self.action_dim,
+            "min_temp": self.min_temp,
+            "max_temp": self.max_temp,
+            "alpha": self.alpha,  # thermal comfort
+            "beta": self.beta,  # energy consumption
+            "modelname": self.modelname,
+            "days": self.days,
+            "hours": self.hours,
+            "minutes": self.minutes,
+            "seconds": self.seconds,
+            "ep_timestep": self.ep_timestep,
         }
 
         return log_dict
 
-    def observation_to_dict(self,obs:np.ndarray) -> Dict[str, float]:
+    def observation_to_dict(self, obs: np.ndarray) -> Dict[str, float]:
         """
         Given an np.array of the current observation, returns a dictionary with the key being the string description of each element
 
@@ -213,12 +219,11 @@ class EnergyPlusEnv(gym.Env):
             obs (np.array): observation of the environment, must be an element of self.observation_space
         """
 
-        dict_values = {self.param_list[i]:obs[i] for i in range(len(self.param_list))}
+        dict_values = {self.param_list[i]: obs[i] for i in range(len(self.param_list))}
 
         return dict_values
 
-
-    def compute_reward(self, obs: np.ndarray, alpha: float, beta:float):
+    def compute_reward(self, obs: np.ndarray, alpha: float, beta: float):
         """
         Given an observation of the environment, computes the reward
         based on energy consumption and thermal comfort 
@@ -233,27 +238,28 @@ class EnergyPlusEnv(gym.Env):
         """
         pmv = self.comfPMV(obs)
 
-        dict_values= self.observation_to_dict(obs)
+        dict_values = self.observation_to_dict(obs)
         qheat_in = dict_values["Qheat"]
         occ_in = dict_values["Occ"]
 
-        reward = beta * (1 - (qheat_in/(800*1000))) + alpha * (1 - abs((pmv + 0.5)))* occ_in
+        reward = (
+            beta * (1 - (qheat_in / (800 * 1000)))
+            + alpha * (1 - abs((pmv + 0.5))) * occ_in
+        )
 
         return reward
 
+    def comfPMV(self, obs: np.ndarray):
 
-    def comfPMV(self, obs:np.ndarray):
-        
-        dict_values= self.observation_to_dict(obs)
-
+        dict_values = self.observation_to_dict(obs)
 
         ta = dict_values["Tair"]
         tr = dict_values["Tmrt"]
-        vel= 0.1
+        vel = 0.1
         rh = dict_values["RH"]
-        met =1.1
+        met = 1.1
         clo = 1
-        wme=0
+        wme = 0
 
         pa = rh * 10 * math.exp(16.6536 - 4030.183 / (ta + 235))
 
@@ -294,7 +300,7 @@ class EnergyPlusEnv(gym.Env):
             xn = (p5 + p4 * hc - p2 * math.pow(xf, 4)) / (100 + p3 * hc)
             n += 1
             if n > 150:
-                print('Max iterations exceeded')
+                print("Max iterations exceeded")
                 return 1  # fixme should not return 1 but instead PMV=999 as per ashrae standard
 
         tcl = 100 * xn - 273

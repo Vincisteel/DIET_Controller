@@ -1,18 +1,19 @@
 # DDPG Thermal Control Policy Implementation
 
-# Importing the libraries
-import random
+from typing import Dict, List, Tuple, Any
+from paramiko import Agent
 import torch
 import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
-import math
-from pyfmi import load_fmu
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import plotly.offline as pyo
+import torch.optim as optim
+import gym
+import envs
+
 import os
 import pandas as pd
+
+from Logger import *
 
 
 # Initializing the Experience Replay Memory
@@ -80,42 +81,58 @@ class Critic(nn.Module):
         return x1
 
 
-# Selecting the device (CPU or GPU)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device = "cpu"
-
-
 # Building the whole DDPG Training Process into a class
-class DDPG(object):
-    def __init__(self, state_dim, action_dim, max_action):
-        self.actor = Actor(state_dim, action_dim, max_action).to(device)
-        self.actor_target = Actor(state_dim, action_dim, max_action).to(device)
+class DDPG_Agent(Agent):
+    def __init__(
+        self,
+        env: gym.Env,
+        state_dim: int,
+        action_dim: int,
+        max_action: float,
+        batch_size: int = 128,
+        discount: float = 0.99,
+        tau: float = 0.05,
+        policy_noise: float = 0.2,
+        noise_clip: float = 0.5,
+    ):
+
+        self.env = env
+
+        # Selecting the device (CPU or GPU)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        ## setting up actors and neural networks components
+        self.actor = Actor(state_dim, action_dim, max_action).to(self.device)
+        self.actor_target = Actor(state_dim, action_dim, max_action).to(self.device)
         self.actor_target.load_state_dict(self.actor.state_dict())
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters())
-        self.critic = Critic(state_dim, action_dim).to(device)
-        self.critic_target = Critic(state_dim, action_dim).to(device)
+        self.critic = Critic(state_dim, action_dim).to(self.device)
+        self.critic_target = Critic(state_dim, action_dim).to(self.device)
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters())
+
+        ## setting up agent hyperparameters
+        self.state_dim = state_dim
+        self.action_dim = action_dim
         self.max_action = max_action
+        self.batch_size = batch_size
+        self.discount = discount
+        self.tau = tau
+        self.policy_noise = policy_noise
+        self.noise_clip = noise_clip
+
+        self.replay_buffer = ReplayBuffer()
 
     def select_action(self, state):
-        state = torch.Tensor(state.reshape(1, -1)).to(device)
+        state = torch.Tensor(state.reshape(1, -1)).to(self.device)
         return self.actor(state).cpu().data.numpy().flatten()
 
         # Learning Process for the DDPG Algorithm
 
-    def train(
-        self,
-        replay_buffer,
-        iterations,
-        batch_size=128,
-        discount=0.99,
-        tau=0.05,
-        policy_noise=0.2,
-        noise_clip=0.5,
-    ):
 
-        for it in range(iterations):
+    def update_agent(self,num_training_iterations:int):
+
+        for it in range(num_training_iterations):
 
             # Step 4: We sample a batch of transitions (s, s', a, r) from the memory
             (
@@ -123,12 +140,14 @@ class DDPG(object):
                 batch_next_states,
                 batch_actions,
                 batch_rewards,
-            ) = replay_buffer.sample(batch_size)
-            state = torch.Tensor(batch_states).to(device)
-            next_state = torch.Tensor(batch_next_states).to(device)
+            ) = self.replay_buffer.sample(self.batch_size)
+
+            state = torch.Tensor(batch_states).to(self.device)
+            next_state = torch.Tensor(batch_next_states).to(self.device)
+            # normalize
             next_state = (next_state - next_state.mean()) / next_state.std()
-            action = torch.Tensor(batch_actions).to(device)
-            reward = torch.Tensor(batch_rewards).to(device)
+            action = torch.Tensor(batch_actions).to(self.device)
+            reward = torch.Tensor(batch_rewards).to(self.device)
 
             # Step 5: From the next state s', the Actor target plays the next action a'
             next_action = self.actor_target(next_state)
@@ -136,8 +155,12 @@ class DDPG(object):
 
             # Step 6: We add Gaussian noise to this next action a' and we clamp it in a range of values supported
             # by the environment
-            noise = torch.Tensor(batch_actions).data.normal_(0, policy_noise).to(device)
-            noise = noise.clamp(-noise_clip, noise_clip)
+            noise = (
+                torch.Tensor(batch_actions)
+                .data.normal_(0, self.policy_noise)
+                .to(self.device)
+            )
+            noise = noise.clamp(-self.noise_clip, self.noise_clip)
             next_action = (next_action + noise).clamp(12, self.max_action)
 
             # Step 7: The Critic Target take (s', a') as input and return Q-value Qt(s', a') as output
@@ -147,7 +170,7 @@ class DDPG(object):
                 print(f"Training iterations {it}")
 
             # Step 8: We get the estimated reward, which is: r' = r + γ * Qt, where γ id the discount factor
-            target_q = reward + (discount * target_q).detach()
+            target_q = reward + (self.discount * target_q).detach()
 
             # Step 9: The Critic models take (s, a) as input and return Q-value Q(s, a) as output
             current_q = self.critic(state, action)
@@ -172,7 +195,7 @@ class DDPG(object):
                 self.actor.parameters(), self.actor_target.parameters()
             ):
                 target_param.data.copy_(
-                    tau * param.data + (1 - tau) * target_param.data
+                    self.tau * param.data + (1 - self.tau) * target_param.data
                 )
 
             # Step 14: We update the weights of the Critic target by polyak averaging
@@ -180,8 +203,49 @@ class DDPG(object):
                 self.critic.parameters(), self.critic_target.parameters()
             ):
                 target_param.data.copy_(
-                    tau * param.data + (1 - tau) * target_param.data
+                    self.tau * param.data + (1 - self.tau) * target_param.data
                 )
+
+
+    def train(
+        self,
+        logging_path: str,
+        num_episodes: int,
+        num_iterations: int,
+        log: bool,
+        num_training_iterations: int = 100,
+        num_random_episodes: int = 1
+    ) -> Tuple[str, pd.DataFrame]:
+
+        ## check num_iterations
+        if num_iterations is None:
+            num_iterations = self.env.numsteps
+
+        if num_iterations > self.env.numsteps:
+            print(
+                f"WARNING: Number of iterations chosen ({num_iterations}) is higher than the number of steps of the environment ({self.env.numsteps}) "
+            )
+            num_iterations = self.env.numsteps
+
+        logger = Logger(
+            logging_path=logging_path,
+            agent_name="DDPG_Agent",
+            num_episodes=num_episodes,
+            num_iterations=num_iterations,
+        )
+
+        for episode_num in range(num_episodes):
+
+            if episode_num < num_random_episodes:
+                ## do random things
+            else:
+                # do step by step
+
+
+
+
+
+        
 
     # Making a save method to save a trained model
     def save(self, filename, directory):
@@ -198,123 +262,17 @@ class DDPG(object):
         )
 
 
-# We set the parameters
-save_models = True  # Boolean checker whether or not to save the pre-trained model
-expl_noise = 0.1  # Exploration noise - STD value of exploration Gaussian noise
-batch_size = 128  # Size of the batch
-discount = 0.99  # Discount factor gamma, used in the calculation of the total discounted reward
-tau = 0.05  # Target network update rate
-policy_noise = (
-    0.2  # STD of Gaussian noise added to the actions for the exploration purposes
-)
-noise_clip = 0.5  # Maximum value of the Gaussian noise added to the actions (policy)
-alpha = 3  # Adjusting co-efficient for the comfort reward
-beta = 1  # Adjusting co-efficient for the energy reward
-modelname = "CELLS_v1"
-days = 151  # Number of days the simulation is run for
-hours = 24  # Number of hours each day the simulation is run for
-minutes = 60
-seconds = 60
-ep_timestep = 6  # Number of timesteps per hour
-num_random_episodes = 1
-num_total_episodes = 3
-numsteps = days * hours * ep_timestep
-timestop = days * hours * minutes * seconds
-secondstep = timestop / numsteps
-comfort_lim = 0
-min_temp = 12
-max_temp = 30
-
-# We create a filename for the two saved models: the Actor and Critic Models
-file_name = "%s_%s" % ("DDPG", "DIET")
-print("---------------------------------------")
-print("Settings: %s" % file_name)
-print("---------------------------------------")
-
 # We get the necessary information on the states and actions in the chosen environment
 state_dim = 6
 action_dim = 1
 max_action = 21
 
+num_random_episodes = 1
+num_total_episodes = 3
+
 # We create the policy network (the Actor model)
-policy = DDPG(state_dim, action_dim, max_action)
+policy = DDPG_Agent(state_dim, action_dim, max_action)
 
-# We create the Experience Replay memory
-replay_buffer = ReplayBuffer()
-
-
-# Function taken from CBE comfort tool to calculate the pmv value for comfort evaluation
-def comfPMV(ta, tr, rh, vel=0.1, met=1.1, clo=1, wme=0):
-    pa = rh * 10 * math.exp(16.6536 - 4030.183 / (ta + 235))
-
-    icl = 0.155 * clo  # thermal insulation of the clothing in M2K/W
-    m = met * 58.15  # metabolic rate in W/M2
-    w = wme * 58.15  # external work in W/M2
-    mw = m - w  # internal heat production in the human body
-    if icl <= 0.078:
-        fcl = 1 + (1.29 * icl)
-    else:
-        fcl = 1.05 + (0.645 * icl)
-
-    # heat transfer coefficient by forced convection
-    hcf = 12.1 * math.sqrt(vel)
-    taa = ta + 273
-    tra = tr + 273
-    # we have verified that using the equation below or this tcla = taa + (35.5 - ta) / (3.5 * (6.45 * icl + .1))
-    # does not affect the PMV value
-    tcla = taa + (35.5 - ta) / (3.5 * icl + 0.1)
-
-    p1 = icl * fcl
-    p2 = p1 * 3.96
-    p3 = p1 * 100
-    p4 = p1 * taa
-    p5 = (308.7 - 0.028 * mw) + (p2 * math.pow(tra / 100.0, 4))
-    xn = tcla / 100
-    xf = tcla / 50
-    eps = 0.00015
-
-    n = 0
-    while abs(xn - xf) > eps:
-        xf = (xf + xn) / 2
-        hcn = 2.38 * math.pow(abs(100.0 * xf - taa), 0.25)
-        if hcf > hcn:
-            hc = hcf
-        else:
-            hc = hcn
-        xn = (p5 + p4 * hc - p2 * math.pow(xf, 4)) / (100 + p3 * hc)
-        n += 1
-        if n > 150:
-            print("Max iterations exceeded")
-            return 1  # fixme should not return 1 but instead PMV=999 as per ashrae standard
-
-    tcl = 100 * xn - 273
-
-    # heat loss diff. through skin
-    hl1 = 3.05 * 0.001 * (5733 - (6.99 * mw) - pa)
-    # heat loss by sweating
-    if mw > 58.15:
-        hl2 = 0.42 * (mw - 58.15)
-    else:
-        hl2 = 0
-    # latent respiration heat loss
-    hl3 = 1.7 * 0.00001 * m * (5867 - pa)
-    # dry respiration heat loss
-    hl4 = 0.0014 * m * (34 - ta)
-    # heat loss by radiation
-    hl5 = 3.96 * fcl * (math.pow(xn, 4) - math.pow(tra / 100.0, 4))
-    # heat loss by convection
-    hl6 = fcl * hc * (tcl - ta)
-
-    ts = 0.303 * math.exp(-0.036 * m) + 0.028
-    pmv = ts * (mw - hl1 - hl2 - hl3 - hl4 - hl5 - hl6)
-    ppd = 100.0 - 95.0 * math.exp(-0.03353 * pow(pmv, 4.0) - 0.2179 * pow(pmv, 2.0))
-
-    return pmv
-
-
-os.chdir(
-    r"C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\Eplus_simulation"
-)
 
 TRAIN_PATH = "../Training_Data/01032022/Ep"
 MODEL_PATH = "../pytorch_models/01032022"
@@ -359,7 +317,7 @@ for sim_num in range(num_total_episodes):
 
         if sim_num < num_random_episodes:
             action[index] = round(
-                random.uniform(min_temp, max_temp), 1
+                random.uniform(self.env.min_temp, self.env.max_temp), 1
             )  # Choosing random values between 12 and 30 deg
 
         else:  # After 1 episode, we switch to the model
@@ -370,12 +328,14 @@ for sim_num in range(num_total_episodes):
             if expl_noise != 0:
                 action_arr = (
                     action_arr + np.random.normal(0, expl_noise, size=1)
-                ).clip(min_temp, max_temp)
+                ).clip(self.env.min_temp, self.env.max_temp)
                 action[index] = action_arr[0]
 
         model.set("Thsetpoint_diet", action[index])
         res = model.do_step(current_t=simtime, step_size=secondstep, new_step=True)
         inputcheck_heating[index] = model.get("Thsetpoint_diet")
+
+        ## keeping track of the value we've seeen
         (
             tair[index],
             rh[index],
@@ -385,6 +345,8 @@ for sim_num in range(num_total_episodes):
             occ[index],
             inputcheck_heating[index],
         ) = model.get(["Tair", "RH", "Tmrt", "Tout", "Qheat", "Occ", "Thsetpoint_diet"])
+
+        ## putting them together
         (
             state[index][0],
             state[index][1],
@@ -394,6 +356,8 @@ for sim_num in range(num_total_episodes):
             state[index][5],
         ) = (tair[index], rh[index], tmrt[index], tout[index], occ[index], qheat[index])
         pmv[index] = comfPMV(tair[index], tmrt[index], rh[index])
+
+        ## computing reward
         reward[index] = (
             beta * (1 - (qheat[index] / (800 * 1000)))
             + alpha * (1 - abs(pmv[index] + 0.5)) * occ[index]
@@ -422,200 +386,11 @@ for sim_num in range(num_total_episodes):
                     qheat[index],
                 ]
             ).flatten()
+
             # We store the new transition into the Experience Replay memory (ReplayBuffer)
             replay_buffer.add((obs, new_obs, action[index], reward[index]))
+
             obs = new_obs
 
         simtime += secondstep
         index += 1
-    os.makedirs(TRAIN_PATH + str(sim_num + 1), exist_ok=True)
-    # Writing to .csv files to save the data from the episode
-    np.savetxt(
-        TRAIN_PATH + str(sim_num + 1) + "/state.csv", state[:-1, :], delimiter=","
-    )
-    np.savetxt(
-        TRAIN_PATH + str(sim_num + 1) + "/next_state.csv", state[1:, :], delimiter=","
-    )
-    np.savetxt(
-        TRAIN_PATH + str(sim_num + 1) + "/action.csv", action[1:, :], delimiter=","
-    )
-    np.savetxt(
-        TRAIN_PATH + str(sim_num + 1) + "/reward.csv", reward[1:, :], delimiter=","
-    )
-    np.savetxt(TRAIN_PATH + str(sim_num + 1) + "/pmv.csv", pmv[1:, :], delimiter=",")
-
-    # Plotting the summary of simulation
-    fig = make_subplots(
-        rows=6,
-        cols=1,
-        shared_xaxes=True,
-        vertical_spacing=0.04,
-        specs=[
-            [{"secondary_y": False}],
-            [{"secondary_y": False}],
-            [{"secondary_y": False}],
-            [{"secondary_y": True}],
-            [{"secondary_y": True}],
-            [{"secondary_y": False}],
-        ],
-    )
-
-    # Add traces
-    fig.add_trace(
-        go.Scatter(
-            name="Tair(state)",
-            x=t,
-            y=tair.flatten(),
-            mode="lines",
-            line=dict(width=1, color="cyan"),
-        ),
-        row=1,
-        col=1,
-    )
-    fig.add_trace(
-        go.Scatter(
-            name="Tair_avg",
-            x=t,
-            y=pd.Series(tair.flatten()).rolling(window=24).mean(),
-            mode="lines",
-            line=dict(width=2, color="blue"),
-        ),
-        row=1,
-        col=1,
-    )
-    fig.add_trace(
-        go.Scatter(
-            name="Tset(action)",
-            x=t,
-            y=action.flatten(),
-            mode="lines",
-            line=dict(width=1, color="fuchsia"),
-        ),
-        row=2,
-        col=1,
-    )
-    fig.add_trace(
-        go.Scatter(
-            name="Tset_avg",
-            x=t,
-            y=pd.Series(action.flatten()).rolling(window=24).mean(),
-            mode="lines",
-            line=dict(width=2, color="purple"),
-        ),
-        row=2,
-        col=1,
-    )
-    fig.add_trace(
-        go.Scatter(
-            name="Pmv",
-            x=t,
-            y=pmv.flatten(),
-            mode="lines",
-            line=dict(width=1, color="gold"),
-        ),
-        row=3,
-        col=1,
-    )
-    fig.add_trace(
-        go.Scatter(
-            name="Pmv_avg",
-            x=t,
-            y=pd.Series(pmv.flatten()).rolling(window=24).mean(),
-            mode="lines",
-            line=dict(width=2, color="darkorange"),
-        ),
-        row=3,
-        col=1,
-    )
-    fig.add_trace(
-        go.Scatter(
-            name="Heating",
-            x=t,
-            y=qheat.flatten(),
-            mode="lines",
-            line=dict(width=1, color="red"),
-        ),
-        row=4,
-        col=1,
-        secondary_y=False,
-    )
-    fig.add_trace(
-        go.Scatter(
-            name="Heating_cumulative",
-            x=t,
-            y=np.cumsum(qheat.flatten()),
-            mode="lines",
-            line=dict(width=2, color="darkred"),
-        ),
-        row=4,
-        col=1,
-        secondary_y=True,
-    )
-    fig.add_trace(
-        go.Scatter(
-            name="Reward",
-            x=t,
-            y=reward.flatten(),
-            mode="lines",
-            line=dict(width=1, color="lime"),
-        ),
-        row=5,
-        col=1,
-        secondary_y=False,
-    )
-    fig.add_trace(
-        go.Scatter(
-            name="Reward_cum",
-            x=t,
-            y=np.cumsum(reward.flatten()),
-            mode="lines",
-            line=dict(width=2, color="darkgreen"),
-        ),
-        row=5,
-        col=1,
-        secondary_y=True,
-    )
-    fig.add_trace(
-        go.Scatter(
-            name="Occupancy",
-            x=t,
-            y=occ.flatten(),
-            mode="lines",
-            line=dict(width=1, color="black"),
-        ),
-        row=6,
-        col=1,
-    )
-
-    # Set x-axis title
-    fig.update_xaxes(title_text="Timestep (-)", row=6, col=1)
-
-    # Set y-axes titles
-    fig.update_yaxes(title_text="<b>Tair</b> (°C)", range=[10, 24], row=1, col=1)
-    fig.update_yaxes(title_text="<b>Tset</b> (°C)", range=[12, 30], row=2, col=1)
-    fig.update_yaxes(title_text="<b>PMV</b> (-)", row=3, col=1)
-    fig.update_yaxes(
-        title_text="<b>Heat Power</b> (kJ/hr)", row=4, col=1, secondary_y=False
-    )
-    fig.update_yaxes(
-        title_text="<b>Heat Energy</b> (kJ)", row=4, col=1, secondary_y=True
-    )
-    fig.update_yaxes(
-        title_text="<b>Reward</b> (-)", row=5, col=1, range=[-5, 5], secondary_y=False
-    )
-    fig.update_yaxes(title_text="<b>Tot Reward</b> (-)", row=5, col=1, secondary_y=True)
-    fig.update_yaxes(title_text="<b>Fraction</b> (-)", row=6, col=1)
-
-    fig.update_xaxes(nticks=50)
-
-    fig.update_layout(
-        template="plotly_white",
-        font=dict(family="Courier New, monospace", size=12),
-        legend=dict(orientation="h", yanchor="bottom", y=1, xanchor="right", x=1),
-    )
-
-    pyo.plot(fig, filename=TRAIN_PATH + str(sim_num + 1) + "/results.html")
-
-    del model, opts
-
-policy.save(file_name, directory=MODEL_PATH)  # Change the folder name here

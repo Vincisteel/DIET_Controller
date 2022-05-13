@@ -1,6 +1,4 @@
-import logging
 from typing import Dict, List, Tuple, Any
-from paramiko import Agent
 import torch
 import torch.nn as nn
 import numpy as np
@@ -8,16 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import gym
 import envs
-from datetime import datetime
-import json
-import seaborn as sns
-import matplotlib.pyplot as plt
 
-import math
-from pyfmi import load_fmu
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import plotly.offline as pyo
 import os
 import pandas as pd
 
@@ -201,6 +190,7 @@ class DQNAgent(Agent):
         ## instantiate logger
         logger = Logger(
             logging_path=logging_path,
+            agent_name="DQN_Agent",
             num_episodes=num_episodes,
             num_iterations=num_iterations,
         )
