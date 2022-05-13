@@ -6,7 +6,7 @@ import gym
 
 class Agent(metaclass=ABCMeta):
     @abstractmethod
-    def from_dict(self, dict_arguments: Dict[str, Any]) -> Agent:
+    def from_dict(self, dict_arguments: Dict[str, Any]):
         pass
 
     @abstractmethod

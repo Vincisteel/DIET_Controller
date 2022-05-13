@@ -12,6 +12,8 @@ import pandas as pd
 
 from Logger import *
 
+from Agent import *
+
 
 class DQNAgent(Agent):
     """DQN Agent interacting with environment.
