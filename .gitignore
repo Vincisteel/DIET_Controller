@@ -1,3 +1,4 @@
 .metals/
 .vscode/
 **/__pycache__
+**/Output_EPExport_Slave
