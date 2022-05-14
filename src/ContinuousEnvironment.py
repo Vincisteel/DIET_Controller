@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Tuple
 from SimpleEnvironment import SimpleEnvironment
 
 
-class DiscreteSimpleEnvironment(SimpleEnvironment):
+class ContinuousSimpleEnvironment(SimpleEnvironment):
     def __init__(
         self,
         param_list: List[str] = [
@@ -17,7 +17,6 @@ class DiscreteSimpleEnvironment(SimpleEnvironment):
             "Qheat",
             "Occ",
         ],  # what we get from the model at each step
-        discrete_action_dim: int = 200,  #
         min_temp: int = 16,  # minimum temperature for action
         max_temp: int = 21,
         alpha: float = 1,  # thermal comfort
@@ -45,29 +44,11 @@ class DiscreteSimpleEnvironment(SimpleEnvironment):
             ep_timestep,
         )
 
-        self._discrete_action_dim = discrete_action_dim
-
-        self._action_space = Discrete(self.discrete_action_dim)
-
-        self.action_to_temp = np.linspace(
-            self.min_temp, self.max_temp, self.discrete_action_dim
-        )
+        self._action_space = Box(low=self.min_temp, high=self._max_temp, shape=(1,))
 
     @property
     def action_space(self):
         return self._action_space
-
-    @property
-    def discrete_action_dim(self):
-        return self._discrete_action_dim
-
-    @discrete_action_dim.setter
-    def action(self, dim):
-        self._action_dim = dim
-        self._action_space = Discrete(self.discrete_action_dim)
-        self.action_to_temp = np.linspace(
-            self.min_temp, self.max_temp, self.discrete_action_dim
-        )
 
     @property
     def min_temp(self):
@@ -76,9 +57,7 @@ class DiscreteSimpleEnvironment(SimpleEnvironment):
     @min_temp.setter
     def min_temp(self, temp):
         self._min_temp = temp
-        self.action_to_temp = np.linspace(
-            self.min_temp, self.max_temp, self.discrete_action_dim
-        )
+        self._action_space = Box(low=self.min_temp, high=self._max_temp, shape=(1,))
 
     @property
     def max_temp(self):
@@ -87,21 +66,17 @@ class DiscreteSimpleEnvironment(SimpleEnvironment):
     @max_temp.setter
     def max_temp(self, temp):
         self._max_temp = temp
-        self.action_to_temp = np.linspace(
-            self.min_temp, self.max_temp, self.discrete_action_dim
-        )
+        self._action_space = Box(low=self.min_temp, high=self._max_temp, shape=(1,))
 
     def reset(self, seed=42) -> np.ndarray:
         self.action_space.seed(seed)
         return super().reset(seed)
 
-    def step(self, action: Discrete) -> Tuple[np.ndarray, float, bool, dict]:
-        action_temperature = self.action_to_temp[action]
-        return super().step(action=action_temperature)
+    def step(self, action: float) -> Tuple[np.ndarray, float, bool, dict]:
+        return super().step(action=action)
 
     def log_dict(self):
         log_dict = super().log_dict()
 
-        log_dict["discrete_action_dim"] = self.discrete_action_dim
         return log_dict
 
