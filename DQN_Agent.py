@@ -146,7 +146,9 @@ class DQNAgent(Agent):
 
         return selected_action
 
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, np.float64, bool]:
+    def step(
+        self, action: np.ndarray
+    ) -> Tuple[np.ndarray, float, bool, Dict[str, Any]]:
         """Take an action and return the response of the env."""
         next_state, reward, done, info = self.env.step(action)
 
@@ -222,7 +224,7 @@ class DQNAgent(Agent):
                 action = self.select_action(state)
                 next_state, reward, done, info = self.step(action)
 
-                if i % 100 == 0:
+                if i % 1000 == 0:
                     print(f"Iteration{i}")
 
                 ## keeping track of the value we've seen
