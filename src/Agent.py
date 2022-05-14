@@ -1,3 +1,4 @@
+from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from typing import Dict, List, Tuple, Any
 import pandas as pd
@@ -5,7 +6,7 @@ import pandas as pd
 
 class Agent(metaclass=ABCMeta):
     @abstractmethod
-    def from_dict(self, dict_arguments: Dict[str, Any]):
+    def from_dict(self, dict_arguments: Dict[str, Any]) -> Agent:
         pass
 
     @abstractmethod

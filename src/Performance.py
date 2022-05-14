@@ -1,19 +1,15 @@
-from ast import Call
-import glob
 from typing import Dict, List, Tuple, Any, Callable
-import json
-import os
+
 from pathlib import Path
 from collections import namedtuple
-from itertools import product
+
 import numpy as np
 import pandas as pd
-import gym
-import sys
 
 from utils import all_combinations_list
-from DQN_Agent import *
-from Logger import *
+from Logger import Logger
+from Environment import Environment
+from Agent import Agent
 
 
 # THE IDEA IS TO FIRST FIND THE BEST CONTROLLER USING ACROSS_TIME
@@ -72,7 +68,7 @@ def across_time(
     utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
     window: int = 1000,
     column: str = "action",
-    alpha=0.05,
+    alpha: float = 0.05,
 ) -> Tuple[float, float, float]:
 
     utility = utility_function(data)
@@ -84,7 +80,7 @@ def across_time(
     # of a day instead of 5 months or longer.
 
     dispersion = compute_dispersion_across_time(data, column, window)
-    risk = compute_risk_across_time(data, column, window)
+    risk = compute_risk_across_time(data, column, alpha=alpha)
 
     return (utility, dispersion, risk)
 
@@ -93,13 +89,13 @@ def across_time(
 
 
 def across_runs(
-    env_name: str,
-    env_arguments: Dict[str, Any],
+    agent: Agent,
     agent_arguments: Dict[str, Any],
     parameter: Tuple[str, List[Any]],
     logging_path: str,
     agent_name: str,
     num_episodes: int,
+    num_iterations: int,
     utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
     alpha=0.05,
 ):
@@ -124,13 +120,14 @@ def across_runs(
     for curr_agent_arguments in all_combinations_list(agent_arguments):
 
         # for example env_name = 'EnergyPlusEnv-v0'
-        env = gym.make(env_name)
-        env.set_arguments(env_arguments)
 
-        agent = DQNAgent(env, dict_arguments=curr_agent_arguments)
+        curr_agent: Agent = agent.from_dict(curr_agent_arguments)
 
-        results_path, summary_df = agent.train(
-            logging_path=logging_path, num_episodes=num_episodes, log=True
+        results_path, summary_df = curr_agent.train(
+            logging_path=logging_path,
+            num_episodes=num_episodes,
+            num_iterations=num_iterations,
+            log=True,
         )
         utilities_results.append(utility_function(summary_df))
         results_path_list.append(results_path)
@@ -153,7 +150,7 @@ def across_runs(
         logging_path=logging_path,
         agent_name=agent_name,
         num_episodes=num_episodes,
-        num_iterations=env.numsteps,
+        num_iterations=num_iterations,
     )
 
     logger.log_performance_pipeline(results_dict)
@@ -178,7 +175,10 @@ def across_fixed_policy(
     for i in range(num_testing):
 
         _, summary_df = agent.test(
-            logging_path=logging_path, num_episodes=num_episodes, log=True
+            logging_path=logging_path,
+            num_episodes=num_episodes,
+            num_iterations=None,
+            log=True,
         )
 
         utilities_results.append(utility_function(summary_df))

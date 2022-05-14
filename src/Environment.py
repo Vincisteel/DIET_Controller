@@ -2,6 +2,8 @@ from abc import ABCMeta, abstractmethod
 from typing import Dict, List, Tuple, Any, TypeVar
 import numpy as np
 
+from __future__ import annotations
+
 
 ObsType = TypeVar("ObsType")
 ActType = TypeVar("ActType")
