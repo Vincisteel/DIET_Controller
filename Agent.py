@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from typing import Dict, List, Tuple, Any
 import pandas as pd
-import gym
 
 
 class Agent(metaclass=ABCMeta):
@@ -31,6 +30,10 @@ class Agent(metaclass=ABCMeta):
 
     @abstractmethod
     def log_dict(self) -> Dict[str, Any]:
+        pass
+
+    @abstractmethod
+    def seed_agent(self, seed: int):
         pass
 
     def __getattribute__(self, attr):

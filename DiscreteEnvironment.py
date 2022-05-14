@@ -10,13 +10,10 @@ from typing import Any, Dict, List, Tuple
 import math
 from pyfmi import load_fmu
 
+from Environment import Environment
 
-class EnergyPlusEnv(gym.Env):
 
-    """
-    Custom Environment to interact with EnergyPlus and define observation and action space
-    """
-
+class DiscreteSimpleEnvironment(Environment):
     def __init__(
         self,
         param_list: List[str] = [
@@ -27,7 +24,7 @@ class EnergyPlusEnv(gym.Env):
             "Qheat",
             "Occ",
         ],  # what we get from the model at each step
-        action_dim: int = 200,  #
+        discrete_action_dim: int = 200,  #
         min_temp: int = 16,  # minimum temperature for action
         max_temp: int = 21,
         alpha: float = 1,  # thermal comfort
@@ -63,46 +60,82 @@ class EnergyPlusEnv(gym.Env):
         self.simtime = 0  # keeps track of current time in the simulation
         self.model = None
 
-        self.min_temp = min_temp
-        self.max_temp = max_temp
+        self._min_temp = min_temp
+        self._max_temp = max_temp
 
         ## parameters for dimensions of the state and reward function
-        self.action_dim = action_dim
+        self._discrete_action_dim = discrete_action_dim
         self.alpha = alpha
         self.beta = beta
 
         ## defines the data that we fetch from the model at each step to build our observation
         self.param_list = param_list
-        self.observation_dim = len(self.param_list)
 
-        self.action_space = Discrete(self.action_dim)
-        self.observation_space = Box(
+        self._action_space = Discrete(self.discrete_action_dim)
+        self._observation_space = Box(
             low=-np.inf, high=np.inf, shape=(self.observation_dim,)
         )
-        self.action_to_temp = np.linspace(self.min_temp, self.max_temp, self.action_dim)
-        self.curr_obs = None
+        self.action_to_temp = np.linspace(
+            self.min_temp, self.max_temp, self.discrete_action_dim
+        )
+        self.curr_obs = np.array([])
 
-    def set_action_dim(self, dim):
-        self.action_dim = dim
-        self.action_space = Discrete(self.action_dim)
-        self.action_to_temp = np.linspace(self.min_temp, self.max_temp, self.action_dim)
+    @property
+    def action_space(self):
+        return self._action_space
 
-    def set_arguments(self, env_arguments: Dict[str, Any]):
-        for k, v in env_arguments.items():
-            if k == "action_dim":
-                self.set_action_dim(v)
-            elif k == "min_temp":
-                self.min_temp = v
-                self.action_to_temp = np.linspace(
-                    self.min_temp, self.max_temp, self.action_dim
-                )
-            elif k == "max_temp":
-                self.max_temp = v
-                self.action_to_temp = np.linspace(
-                    self.min_temp, self.max_temp, self.action_dim
-                )
-            else:
-                setattr(self, k, v)
+    @property
+    def observation_space(self):
+        return self._observation_space
+
+    @property
+    def action_dim(self):
+        return 1
+
+    @property
+    def observation_dim(self):
+        return len(self.param_list)
+
+    @property
+    def discrete_action_dim(self):
+        return self._discrete_action_dim
+
+    @discrete_action_dim.setter
+    def action(self, dim):
+        self._action_dim = dim
+        self._action_space = Discrete(self.discrete_action_dim)
+        self.action_to_temp = np.linspace(
+            self.min_temp, self.max_temp, self.discrete_action_dim
+        )
+
+    @property
+    def min_temp(self):
+        return self._min_temp
+
+    @min_temp.setter
+    def min_temp(self, temp):
+        self._min_temp = temp
+        self.action_to_temp = np.linspace(
+            self.min_temp, self.max_temp, self.discrete_action_dim
+        )
+
+    @property
+    def max_temp(self):
+        return self._max_temp
+
+    @max_temp.setter
+    def max_temp(self, temp):
+        self._max_temp = temp
+        self.action_to_temp = np.linspace(
+            self.min_temp, self.max_temp, self.discrete_action_dim
+        )
+
+    ##def from_dict(self, env_arguments: Dict[str, Any]) -> Environment:
+    ##    for k, v in env_arguments.items():
+    ##            print(k)
+    ##            setattr(self, k, v)
+    ##
+    ##    return self
 
     def reset(self, seed=None) -> np.ndarray:
         """
@@ -111,14 +144,6 @@ class EnergyPlusEnv(gym.Env):
         Returns:
             np.array: Element of self.observation_space, representing the HVAC environment dynamics
         """
-
-        ## discretizing the continuous temperature interval
-        ## and defining action and observation spaces
-
-        ## mapping between discrete space and temperature
-        print(f"Env action_dim {self.action_dim}")
-        print(f" BETA {self.beta}")
-
         ## seeding
         if seed is None:
             seed = 42
@@ -187,6 +212,7 @@ class EnergyPlusEnv(gym.Env):
             "param_list": self.param_list,
             "observation_dim": self.observation_dim,
             "action_dim": self.action_dim,
+            "discrete_action_dim": self.discrete_action_dim,
             "min_temp": self.min_temp,
             "max_temp": self.max_temp,
             "alpha": self.alpha,  # thermal comfort

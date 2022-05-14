@@ -4,8 +4,7 @@ import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
 import torch.optim as optim
-import gym
-import envs
+
 
 import os
 import pandas as pd
@@ -13,6 +12,7 @@ import pandas as pd
 from Logger import *
 
 from Agent import *
+from Environment import *
 
 
 class DQNAgent(Agent):
@@ -37,7 +37,7 @@ class DQNAgent(Agent):
 
     def __init__(
         self,
-        env: gym.Env,
+        env: Environment,
         memory_size: int = 1000,
         batch_size: int = 32,
         target_update: int = 100,
@@ -48,9 +48,6 @@ class DQNAgent(Agent):
         inside_dim: int = 128,  ## dimension of the hidden layers of the network
         num_hidden_layers: int = 1,
         seed: int = 778,
-        dict_arguments: Dict[
-            str, Any
-        ] = {},  ## easy way to set arguments when using blackbox optimization
     ):
         """Initialization.
         
@@ -79,11 +76,6 @@ class DQNAgent(Agent):
         self.inside_dim = inside_dim
         self.num_hidden_layers = num_hidden_layers
 
-        if dict_arguments is not None:
-            ## set arguments given in directory
-            for k, v in dict_arguments.items():
-                setattr(self, k, v)
-
         ## seeding the agent
         self.seed_agent(self.seed)
 
@@ -92,23 +84,21 @@ class DQNAgent(Agent):
 
         ## dimensions for the network
         obs_dim = self.env.observation_dim
-        action_dim = self.env.action_dim
+        discrete_action_dim = self.env.discrete_action_dim
 
         ## setting up memory
         self.memory = ReplayBuffer(obs_dim, memory_size, batch_size)
 
-        print(f"Agent Action_dim{ action_dim}")
-
         # networks: dqn, dqn_target
         self.dqn = Network(
             obs_dim,
-            action_dim,
+            discrete_action_dim,
             inside_dim=self.inside_dim,
             num_hidden_layers=self.num_hidden_layers,
         ).to(self.device)
         self.dqn_target = Network(
             obs_dim,
-            action_dim,
+            discrete_action_dim,
             inside_dim=self.inside_dim,
             num_hidden_layers=self.num_hidden_layers,
         ).to(self.device)
@@ -134,7 +124,7 @@ class DQNAgent(Agent):
         """Select an action from the input state."""
         # epsilon greedy policy
         if self.epsilon > np.random.random():
-            selected_action = np.random.choice(self.env.action_dim, 1)[0]
+            selected_action = np.random.choice(self.env.discrete_action_dim, 1)[0]
         else:
             selected_action = self.dqn(
                 torch.FloatTensor(state.T).to(self.device)

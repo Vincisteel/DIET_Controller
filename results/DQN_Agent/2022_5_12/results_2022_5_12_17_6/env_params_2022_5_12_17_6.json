@@ -31,7 +31,7 @@
   "Occ"
  ],
  "observation_dim": 6,
- "action_dim": 100,
+ "action_dim": 1,
  "min_temp": 16,
  "max_temp": 21,
  "alpha": 1,
@@ -43,5 +43,6 @@
  "seconds": 60,
  "ep_timestep": 6,
  "final_reward": 47876.413614172976,
- "final_cumulative_heating": 2324769845.5191154
+ "final_cumulative_heating": 2324769845.5191154,
+ "discrete_action_dim": 100
 }

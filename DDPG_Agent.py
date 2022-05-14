@@ -15,6 +15,7 @@ import os
 import pandas as pd
 
 from Logger import *
+from Environment import *
 
 
 # Initializing the Experience Replay Memory
@@ -32,8 +33,10 @@ class ReplayBuffer(object):
             self.storage.append(transition)
 
     def sample(self, batch_size):
+
         ind = np.random.randint(0, len(self.storage), size=batch_size)
         batch_states, batch_next_states, batch_actions, batch_rewards = [], [], [], []
+
         for i in ind:
             state, next_state, action, reward = self.storage[i]
             batch_states.append(np.array(state, copy=False))
@@ -50,9 +53,9 @@ class ReplayBuffer(object):
 
 # Building a neural network for the actor model and a neural network for the actor target
 class Actor(nn.Module):
-    def __init__(self, state_dim, action_dim, max_action):
+    def __init__(self, observation_dim, action_dim, max_action):
         super(Actor, self).__init__()
-        self.layer_1 = nn.Linear(state_dim, 400)
+        self.layer_1 = nn.Linear(observation_dim, 400)
         self.layer_2 = nn.Linear(400, 300)
         self.layer_3 = nn.Linear(300, action_dim)
         self.max_action = max_action
@@ -66,9 +69,9 @@ class Actor(nn.Module):
 
 # Building a neural network for the critic model and a neural network for the critic target
 class Critic(nn.Module):
-    def __init__(self, state_dim, action_dim):
+    def __init__(self, observation_dim, action_dim):
         super(Critic, self).__init__()
-        self.layer_1 = nn.Linear(state_dim + action_dim, 400)
+        self.layer_1 = nn.Linear(observation_dim + action_dim, 400)
         self.layer_2 = nn.Linear(400, 300)
         self.layer_3 = nn.Linear(300, 1)
 
@@ -86,16 +89,17 @@ class Critic(nn.Module):
 class DDPG_Agent(Agent):
     def __init__(
         self,
-        env: gym.Env,
-        state_dim: int,
-        action_dim: int,
-        max_action: float,
+        env: Environment,
         batch_size: int = 128,
         discount: float = 0.99,
         tau: float = 0.05,
         policy_noise: float = 0.2,
         noise_clip: float = 0.5,
+        seed: int = 778,
     ):
+
+        # seeding the agent
+        self.seed_agent(seed)
 
         self.env = env
 
@@ -103,19 +107,24 @@ class DDPG_Agent(Agent):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         ## setting up actors and neural networks components
-        self.actor = Actor(state_dim, action_dim, max_action).to(self.device)
-        self.actor_target = Actor(state_dim, action_dim, max_action).to(self.device)
+        self.actor = Actor(
+            self.env.observation_dim, self.env.action_dim, max_action=self.env.max_temp
+        ).to(self.device)
+        self.actor_target = Actor(
+            self.env.observation_dim, self.env.action_dim, max_action=self.env.max_temp
+        ).to(self.device)
         self.actor_target.load_state_dict(self.actor.state_dict())
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters())
-        self.critic = Critic(state_dim, action_dim).to(self.device)
-        self.critic_target = Critic(state_dim, action_dim).to(self.device)
+        self.critic = Critic(self.env.observation_dim, self.env.action_dim).to(
+            self.device
+        )
+        self.critic_target = Critic(self.env.observation_dim, self.env.action_dim).to(
+            self.device
+        )
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters())
 
         ## setting up agent hyperparameters
-        self.state_dim = state_dim
-        self.action_dim = action_dim
-        self.max_action = max_action
         self.batch_size = batch_size
         self.discount = discount
         self.tau = tau
@@ -138,6 +147,7 @@ class DDPG_Agent(Agent):
     def step(
         self, action: np.ndarray
     ) -> Tuple[np.ndarray, float, bool, Dict[str, Any]]:
+
         next_state, reward, done, info = self.env.step(action)
 
         return next_state, reward, done, info
@@ -285,6 +295,30 @@ class DDPG_Agent(Agent):
             torch.load("%s/%s_critic.pth" % (directory, filename))
         )
 
+    def log_dict(self) -> Dict[str, Any]:
+
+        log_dict = {
+            "is_test": self.is_test,
+            "batch_size": self.batch_size,
+            "discount": self.discount,
+            "tau": self.tau,
+            "policy_noise": self.policy_noise,
+            "noise_clip": self.noise_clip,
+            "seed": self.seed,
+        }
+
+        return log_dict
+
+    def seed_agent(self, seed):
+        torch.manual_seed(seed)
+        if torch.backends.cudnn.enabled:
+            torch.backends.cudnn.benchmark = False
+            torch.backends.cudnn.deterministic = True
+
+        np.random.seed(seed)
+        random.seed(seed)
+        return
+
     def update_agent(self, num_training_iterations: int):
 
         for it in range(num_training_iterations):
@@ -316,7 +350,9 @@ class DDPG_Agent(Agent):
                 .to(self.device)
             )
             noise = noise.clamp(-self.noise_clip, self.noise_clip)
-            next_action = (next_action + noise).clamp(12, self.max_action)
+            next_action = (next_action + noise).clamp(
+                self.env.min_temp, self.env.max_temp
+            )
 
             # Step 7: The Critic Target take (s', a') as input and return Q-value Qt(s', a') as output
             target_q = self.critic_target(next_state, next_action)

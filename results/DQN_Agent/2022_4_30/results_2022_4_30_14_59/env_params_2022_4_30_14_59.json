@@ -22,7 +22,7 @@
   "[1.0,inf]": 0.0014946651949963208
  },
  "observation_dim": 6,
- "action_dim": 100,
+ "action_dim": 1,
  "min_temp": 16,
  "max_temp": 21,
  "alpha": 1,
@@ -35,5 +35,6 @@
  "ep_timestep": 6,
  "final_reward": 47730.986185146845,
  "final_cumulative_heating": 2293641087.120967,
- "is_test": false
+ "is_test": false,
+ "discrete_action_dim": 100
 }
