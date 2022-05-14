@@ -26,7 +26,7 @@ class DiscreteSimpleEnvironment(SimpleEnvironment):
         alpha: float = 1,  # thermal comfort
         beta: float = 1,  # energy consumption
         modelname: str = "CELLS_v1.fmu",
-        simulation_path: str = r"C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\Eplus_simulation",
+        simulation_path: str = r"C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\EnergyPlus_simulations\simple_simulation",
         days: int = 151,
         hours: int = 24,
         minutes: int = 60,

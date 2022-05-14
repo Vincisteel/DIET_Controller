@@ -1,0 +1,34 @@
+Program Version,EnergyPlus, Version 9.3.0-baff08990c, YMD=2022.05.14 18:01
+1,5,Environment Title[],Latitude[deg],Longitude[deg],Time Zone[],Elevation[m]
+2,8,Day of Simulation[],Month[],Day of Month[],DST Indicator[1=yes 0=no],Hour[],StartMinute[],EndMinute[],DayType
+3,5,Cumulative Day of Simulation[],Month[],Day of Month[],DST Indicator[1=yes 0=no],DayType  ! When Daily Meters Requested
+4,2,Cumulative Days of Simulation[],Month[]  ! When Monthly Meters Requested
+5,1,Cumulative Days of Simulation[] ! When Run Period Meters Requested
+6,1,Calendar Year of Simulation[] ! When Annual Meters Requested
+11,1,Electricity:Facility [J] !Hourly
+645,1,DistrictCooling:Facility [J] !Hourly
+596,1,DistrictHeating:Facility [J] !Hourly
+699,1,Carbon Equivalent:Facility [kg] !Hourly
+12,7,Electricity:Facility [J] !Daily [Value,Min,Hour,Minute,Max,Hour,Minute]
+646,7,DistrictCooling:Facility [J] !Daily [Value,Min,Hour,Minute,Max,Hour,Minute]
+597,7,DistrictHeating:Facility [J] !Daily [Value,Min,Hour,Minute,Max,Hour,Minute]
+700,7,Carbon Equivalent:Facility [kg] !Daily [Value,Min,Hour,Minute,Max,Hour,Minute]
+13,9,Electricity:Facility [J] !Monthly [Value,Min,Day,Hour,Minute,Max,Day,Hour,Minute]
+647,9,DistrictCooling:Facility [J] !Monthly [Value,Min,Day,Hour,Minute,Max,Day,Hour,Minute]
+598,9,DistrictHeating:Facility [J] !Monthly [Value,Min,Day,Hour,Minute,Max,Day,Hour,Minute]
+701,9,Carbon Equivalent:Facility [kg] !Monthly [Value,Min,Day,Hour,Minute,Max,Day,Hour,Minute]
+15,11,Electricity:Facility [J] !RunPeriod [Value,Min,Month,Day,Hour,Minute,Max,Month,Day,Hour,Minute]
+649,11,DistrictCooling:Facility [J] !RunPeriod [Value,Min,Month,Day,Hour,Minute,Max,Month,Day,Hour,Minute]
+600,11,DistrictHeating:Facility [J] !RunPeriod [Value,Min,Month,Day,Hour,Minute,Max,Month,Day,Hour,Minute]
+703,11,Carbon Equivalent:Facility [kg] !RunPeriod [Value,Min,Month,Day,Hour,Minute,Max,Month,Day,Hour,Minute]
+10,1,Electricity:Facility [J] !TimeStep
+644,1,DistrictCooling:Facility [J] !TimeStep
+595,1,DistrictHeating:Facility [J] !TimeStep
+698,1,Carbon Equivalent:Facility [kg] !TimeStep
+End of Data Dictionary
+1,FRIBOURG (O1-O1:31-12),  46.24,   6.11,   1.00, 430.10
+2,1, 1, 1, 0, 1, 0.00,10.00,Sunday
+10,968.719248
+595,166874.78162415914
+644,0.0
+698,0.0

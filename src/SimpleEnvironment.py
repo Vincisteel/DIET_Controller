@@ -27,7 +27,7 @@ class SimpleEnvironment(Environment):
         alpha: float = 1,  # thermal comfort
         beta: float = 1,  # energy consumption
         modelname: str = "CELLS_v1.fmu",
-        simulation_path: str = r"C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\Eplus_simulation",
+        simulation_path: str = r"C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\EnergyPlus_simulations\simple_simulation",
         days: int = 151,
         hours: int = 24,
         minutes: int = 60,
@@ -133,7 +133,7 @@ class SimpleEnvironment(Environment):
         info (dict): contains auxiliary diagnostic information (helpful for debugging, learning, and logging). 
         """
 
-        if not(self.has_reset):
+        if not (self.has_reset):
             raise InitializationError("Must reset the environment before using it")
 
         pmv = self.comfPMV(self.curr_obs)
