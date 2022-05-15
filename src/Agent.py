@@ -37,6 +37,14 @@ class Agent(metaclass=ABCMeta):
     def seed_agent(self, seed: int):
         pass
 
+    @abstractmethod
+    def load(self, directory: str, filename: str):
+        pass
+
+    @abstractmethod
+    def save(self, directory: str, filename: str):
+        pass
+
     def __getattribute__(self, attr):
         return object.__getattribute__(self, attr)
 

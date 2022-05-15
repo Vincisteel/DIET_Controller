@@ -9,10 +9,10 @@ import torch.optim as optim
 import os
 import pandas as pd
 
-from Logger import *
+from Logger import SimpleLogger
 
-from Agent import *
-from Environment import *
+from Agent import Agent
+from Environment import Environment
 
 
 class DQNAgent(Agent):
@@ -83,8 +83,8 @@ class DQNAgent(Agent):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         ## dimensions for the network
-        obs_dim = self.env.observation_dim
-        discrete_action_dim = self.env.discrete_action_dim
+        obs_dim: int = self.env.observation_dim
+        discrete_action_dim: int = self.env.discrete_action_dim
 
         ## setting up memory
         self.memory = ReplayBuffer(obs_dim, memory_size, batch_size)
@@ -182,12 +182,28 @@ class DQNAgent(Agent):
             num_iterations = self.env.numsteps
 
         ## instantiate logger
-        logger = Logger(
+        logger = SimpleLogger(
             logging_path=logging_path,
             agent_name="DQN_Agent",
             num_episodes=num_episodes,
             num_iterations=num_iterations,
         )
+
+        # plotting options (make sure the dictionary is in the same order as the columns of the outputted summary_df)
+        self.opts = {
+            "Tair": {"secondary_y": None, "range": [10, 24], "unit": "(°C)",},
+            "Tset": {
+                "secondary_y": "moving_average",
+                "range": [14, 22],
+                "unit": "(°C)",
+            },
+            "PMV": {"secondary_y": None, "range": [14, 22], "unit": "(-)",},
+            "Heating": {"secondary_y": "cumulative", "range": None, "unit": "(kJ)",},
+            "Reward": {"secondary_y": "cumulative", "range": [-5, 5], "unit": "(-)",},
+            "Occ": {"secondary_y": None, "range": None, "unit": "(-)",},
+            "Epsilon": {"secondary_y": None, "range": None, "unit": "(-)",},
+            "Loss": {"secondary_y": None, "range": None, "unit": "(-)",},
+        }
 
         summary_df: pd.DataFrame = pd.DataFrame()
 
@@ -255,34 +271,59 @@ class DQNAgent(Agent):
             lower = episode_num * num_iterations
             upper = (episode_num + 1) * num_iterations
 
+            len_difference = len(tair) - len(losses)
+            pad_losses = [0 for i in range(len_difference)]
+            pad_epsilon = [epsilons[0] for i in range(len_difference)]
+            losses = pad_losses + losses
+            epsilons = pad_epsilon + epsilons
+            summary_df = pd.DataFrame(
+                {
+                    "Tair": tair[lower:upper],
+                    "Tset": actions[lower:upper],
+                    "PMV": pmv[lower:upper],
+                    "Heating": qheat[lower:upper],
+                    "Reward": rewards[lower:upper],
+                    "Occ": occ[lower:upper],
+                    "Loss": losses[lower:upper],
+                    "Epsilon": epsilons[lower:upper],
+                }
+            )
+
+            summary_df["Reward"] = summary_df["Reward"].apply(lambda x: float(x[0]))
+
             if log:
-                summary_df = logger.plot_and_logging(
-                    episode_num,
-                    tair[lower:upper],
-                    actions[lower:upper],
-                    pmv[lower:upper],
-                    qheat[lower:upper],
-                    rewards[lower:upper],
-                    occ[lower:upper],
-                    losses[lower:upper],
-                    epsilons[lower:upper],
-                    self,
+                logger.plot_and_logging(
+                    summary_df=summary_df,
+                    agent=self,
+                    episode_num=episode_num,
+                    is_summary=False,
+                    opts=self.opts,
                 )
 
         # plot a summary that contatenates all episodes together for a complete overview of the training
+
+        summary_df = pd.DataFrame(
+            {
+                "Tair": tair,
+                "Tset": actions,
+                "PMV": pmv,
+                "Heating": qheat,
+                "Reward": rewards,
+                "Occ": occ,
+                "Loss": losses,
+                "Epsilon": epsilons,
+            }
+        )
+
+        summary_df["Reward"] = summary_df["Reward"].apply(lambda x: float(x[0]))
+
         if log and num_episodes > 1:
-            summary_df = logger.plot_and_logging(
-                episode_num,
-                tair,
-                actions,
-                pmv,
-                qheat,
-                rewards,
-                occ,
-                losses,
-                epsilons,
-                self,
+            logger.plot_and_logging(
+                summary_df=summary_df,
+                agent=self,
+                episode_num=num_episodes,
                 is_summary=True,
+                opts=self.opts,
             )
 
         # self.env.close()

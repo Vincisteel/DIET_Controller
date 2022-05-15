@@ -20,7 +20,7 @@ from Agent import Agent
 
 # ALREADY DEFINED UTILITY FUNCTIONS
 def cumulative_reward(data: pd.DataFrame) -> float:
-    return np.cumsum(np.array(data["reward"]))[-1]
+    return np.cumsum(np.array(data["Reward"]))[-1]
 
 
 # STATISTICS COMPUTATION
