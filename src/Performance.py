@@ -8,8 +8,8 @@ import pandas as pd
 
 from utils import all_combinations_list
 from Logger import Logger
-from Environment import Environment
-from Agent import Agent
+from environment.Environment import Environment
+from agent.Agent import Agent
 
 
 # THE IDEA IS TO FIRST FIND THE BEST CONTROLLER USING ACROSS_TIME

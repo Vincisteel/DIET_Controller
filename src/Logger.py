@@ -11,7 +11,7 @@ from plotly.subplots import make_subplots
 import plotly.offline as pyo
 import os
 import pandas as pd
-from Agent import Agent
+from agent.Agent import Agent
 
 
 class Logger(metaclass=ABCMeta):
@@ -241,36 +241,36 @@ class SimpleLogger(Logger):
                     suffix = "cumulative"
                     arr = np.cumsum(np.array(arr))
 
-                    fig.add_trace(
-                        go.Scatter(
-                            name=f"{column_name}_{suffix}",
-                            x=t,
-                            y=arr,
-                            mode="lines",
-                            line=dict(width=2, color=colors[i][1]),
-                        ),
+                fig.add_trace(
+                    go.Scatter(
+                        name=f"{column_name}_{suffix}",
+                        x=t,
+                        y=arr,
+                        mode="lines",
+                        line=dict(width=2, color=colors[i][1]),
+                    ),
+                    row=i + 1,
+                    col=1,
+                    secondary_y=True,
+                )
+
+                if range is not None and (
+                    opts[column_name]["secondary_y"] == "moving_average"
+                ):
+                    fig.update_yaxes(
+                        title_text=f"<b>{column_name}_{suffix}</b> { unit}",
+                        range=range,
                         row=i + 1,
                         col=1,
                         secondary_y=True,
                     )
-
-                    if range is not None and (
-                        opts[column_name]["secondary_y"] == "moving_average"
-                    ):
-                        fig.update_yaxes(
-                            title_text=f"<b>{column_name}_{suffix}</b> { unit}",
-                            range=range,
-                            row=i + 1,
-                            col=1,
-                            secondary_y=True,
-                        )
-                    else:
-                        fig.update_yaxes(
-                            title_text=f"<b>{column_name}_{suffix}</b> { unit}",
-                            row=i + 1,
-                            col=1,
-                            secondary_y=True,
-                        )
+                else:
+                    fig.update_yaxes(
+                        title_text=f"<b>{column_name}_{suffix}</b> { unit}",
+                        row=i + 1,
+                        col=1,
+                        secondary_y=True,
+                    )
 
         fig.update_xaxes(nticks=50)
         fig.update_layout(
