@@ -16,25 +16,6 @@ from environment.Environment import Environment
 
 
 class DQNAgent(Agent):
-    """DQN Agent interacting with environment.
-    
-    Attribute:
-        env : (Environment) custom Environment to interact with TRNSYS
-        memory (ReplayBuffer): replay memory to store transitions
-        batch_size (int): batch size for sampling
-        epsilon (float): parameter for epsilon greedy policy
-        epsilon_decay (float): step size to decrease epsilon
-        max_epsilon (float): max value of epsilon
-        min_epsilon (float): min value of epsilon
-        target_update (int): period for target model's hard update
-        gamma (float): discount factor
-        dqn (Network): model to train and select actions
-        dqn_target (Network): target model to update
-        optimizer (torch.optim): optimizer for training dqn
-        transition (list): transition information including 
-                           state, action, reward, next_state, done
-    """
-
     def __init__(
         self,
         env: Environment,
@@ -51,18 +32,29 @@ class DQNAgent(Agent):
         num_hidden_layers: int = 1,
         seed: int = 778,
     ):
-        """Initialization.
-        
+        """Deep Q-Learning Agent. Made to interact with DiscreteEnvironment. Inherits from Agent class.
+
+        Attributes:
+            epsilon: Parameter that defines the level of exploration of the agent. We refer to the definition
+            of epsilon-greedy action selection (https://www.geeksforgeeks.org/epsilon-greedy-algorithm-in-reinforcement-learning/).
+            replay_buffer: Replay buffer to store past experiences, experiences that will be used to train the DQN.
+            transition: A list containing the current state, the action taken and the next state of the agent.
+
+
         Args:
-            env (gym.Env): custom Environment to interact with TRNSYS
-            memory_size (int): length of memory
-            batch_size (int): batch size for sampling
-            target_update (int): period for target model's hard update
-            epsilon_decay (float): step size to decrease epsilon
-            lr (float): learning rate
-            max_epsilon (float): max value of epsilon
-            min_epsilon (float): min value of epsilon
-            gamma (float): discount factor
+            env (Environment): Environment inheriting from the Environment class.
+            memory_size (int, optional): Size of replay buffer memory. Defaults to 1000.
+            batch_size (int, optional): Batch size for sampling. Defaults to 32.
+            actor_update (int, optional): How many environment steps between the DQN training epoch. Defaults to 10.
+            target_update (int, optional): How many environment steps between the target DQN hard update. Defaults to 100.
+            epsilon_decay (float, optional): Step size to decrease epsilon. Defaults to 1/20000.
+            lr (float, optional): Learning rate. Defaults to 1e-3.
+            max_epsilon (float, optional): Maximum and starting value of epsilon. Defaults to 1.0.
+            min_epsilon (float, optional): Minimum and last value of epsilon. Defaults to 0.0.
+            gamma (float, optional): Discount factor of the Bellman equation Defaults to 0.99.
+            inside_dim (int, optional): DQN network hidden layer size. Defaults to 128.
+            num_hidden_layers(int,optional): DQN number of hidden layers. Defaults to 1.
+            seed (int, optional): Seed to seed the agent. Defaults to 778.
         """
 
         self.env = env
@@ -100,6 +92,7 @@ class DQNAgent(Agent):
             inside_dim=self.inside_dim,
             num_hidden_layers=self.num_hidden_layers,
         ).to(self.device)
+
         self.dqn_target = Network(
             obs_dim,
             discrete_action_dim,
@@ -119,13 +112,14 @@ class DQNAgent(Agent):
         self.is_test = False
 
     def from_dict(self, dict_arguments: Dict[str, Any]) -> Agent:
+        """We refer to the Agent class docstring."""
         for k, v in dict_arguments.items():
             setattr(self, k, v)
 
         return self
 
     def select_action(self, state: np.ndarray) -> np.ndarray:
-        """Select an action from the input state."""
+        """We refer to the Agent class docstring."""
         # epsilon greedy policy
         if self.epsilon > np.random.random():
             # selected_action = np.random.choice(self.env.discrete_action_dim, 1)[0]
@@ -144,7 +138,7 @@ class DQNAgent(Agent):
     def step(
         self, action: np.ndarray
     ) -> Tuple[np.ndarray, float, bool, Dict[str, Any]]:
-        """Take an action and return the response of the env."""
+        """We refer to the Agent class docstring."""
         next_state, reward, done, info = self.env.step(action)
 
         if not self.is_test:
@@ -153,17 +147,40 @@ class DQNAgent(Agent):
 
         return next_state, reward, done, info
 
-    def update_model(self) -> torch.Tensor:
-        """Update the model by gradient descent."""
-        samples = self.replay_buffer.sample_batch()
+    def save(self, filename, directory):
+        """We refer to the Agent class docstring."""
 
-        loss = self._compute_dqn_loss(samples)
+        torch.save(self.dqn.state_dict(), "%s/%s_dqn.pth" % (directory, filename))
+        torch.save(
+            self.dqn_target.state_dict(), "%s/%s_dqn_target.pth" % (directory, filename)
+        )
 
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
+    def load(self, filename, directory):
+        """We refer to the Agent class docstring."""
+        self.dqn.load_state_dict(torch.load("%s/%s_dqn.pth" % (directory, filename)))
+        self.dqn_target.load_state_dict(
+            torch.load("%s/%s_dqn_target.pth" % (directory, filename))
+        )
 
-        return loss.item()
+    def log_dict(self) -> Dict[str, Any]:
+        """We refer to the Agent class docstring."""
+        log_dict = {
+            "is_test": self.is_test,
+            "memory_size": self.memory_size,
+            "batch_size": self.batch_size,
+            "target_update": self.target_update,
+            "actor_update": self.actor_update,
+            "epsilon_decay": self.epsilon_decay,
+            "max_epsilon": self.max_epsilon,
+            "min_epsilon": self.min_epsilon,
+            "lr": self.lr,
+            "gamma": self.gamma,
+            "inside_dim": self.inside_dim,
+            "num_hidden_layers": self.num_hidden_layers,
+            "seed": self.seed,
+        }
+
+        return log_dict
 
     def train(
         self,
@@ -173,7 +190,7 @@ class DQNAgent(Agent):
         log=True,
         is_test=False,
     ) -> Tuple[str, pd.DataFrame]:
-        """Train the agent."""
+        """We refer to the Agent class docstring."""
         self.is_test = is_test
 
         ## check num_iterations
@@ -194,7 +211,7 @@ class DQNAgent(Agent):
             num_iterations=num_iterations,
         )
 
-        # plotting options (make sure the dictionary is in the same order as the columns of the outputted summary_df)
+        # plotting options (make sure the dictionary is in the same order as the columns of the created summary_df below)
         self.opts = {
             "Tair": {"secondary_y": None, "range": [10, 24], "unit": "(°C)",},
             "Tset": {
@@ -265,6 +282,7 @@ class DQNAgent(Agent):
                     )
                     epsilons.append(self.epsilon)
 
+                    # if DQN update is needed
                     if update_cnt % self.actor_update == 0:
                         loss = self.update_model()
                         losses.append(loss)
@@ -275,16 +293,18 @@ class DQNAgent(Agent):
 
                     update_cnt += 1
 
-            ## slicing lower and upper bound
+            ## creating lower and upper index to be used below to slice through lists of attributes
             lower = episode_num * num_iterations
             upper = (episode_num + 1) * num_iterations
+
+            # epsilons and losses have different length since they only start to fill up when
+            # the replay buffer is full (i.e. we can train) thus we must pad/extend the length.
+            # this is because plotting requires same length lists.
 
             len_difference = len(tair) - len(epsilons)
             pad_epsilon = [epsilons[0] for i in range(len_difference)]
             epsilons = pad_epsilon + epsilons
 
-            ## extend the length of the loss array such that it is of correct
-            # size for plotting
             temp_losses = [loss for loss in losses for _ in range(self.actor_update)]
             len_difference = len(tair) - len(temp_losses)
             pad_losses = [0 for i in range(len_difference)]
@@ -314,10 +334,9 @@ class DQNAgent(Agent):
                     opts=self.opts,
                 )
 
-        # plot a summary that contatenates all episodes together for a complete overview of the training
+        # Summary that contatenates all episodes together for a complete overview of the training
 
-        ## extend the length of the loss array such that it is of correct
-        # size for plotting
+        ## As above, extend the length of the loss array such that it is of correct size for plotting
         temp_losses = [loss for loss in losses for _ in range(self.actor_update)]
         len_difference = len(tair) - len(temp_losses)
         pad_losses = [0 for i in range(len_difference)]
@@ -347,8 +366,6 @@ class DQNAgent(Agent):
                 opts=self.opts,
             )
 
-        # self.env.close()
-
         results_path = logger.RESULT_PATH
 
         return (results_path, summary_df)
@@ -356,6 +373,7 @@ class DQNAgent(Agent):
     def test(
         self, logging_path: str, num_iterations=None, num_episodes=1, log=True
     ) -> Tuple[str, pd.DataFrame]:
+        """We refer to the Agent class docstring."""
 
         return self.train(
             is_test=True,
@@ -365,32 +383,8 @@ class DQNAgent(Agent):
             log=log,
         )
 
-    def _compute_dqn_loss(self, samples: Dict[str, np.ndarray]) -> torch.Tensor:
-        """Return dqn loss."""
-        device = self.device  # for shortening the following lines
-        state = torch.FloatTensor(samples["obs"]).to(device)
-        next_state = torch.FloatTensor(samples["next_obs"]).to(device)
-        action = torch.LongTensor(samples["acts"].reshape(-1, 1)).to(device)
-        reward = torch.FloatTensor(samples["rews"].reshape(-1, 1)).to(device)
-        done = torch.FloatTensor(samples["done"].reshape(-1, 1)).to(device)
-
-        # G_t   = r + gamma * v(s_{t+1})  if state != Terminal
-        #       = r                       otherwise
-        curr_q_value = self.dqn(state).gather(1, action)
-        next_q_value = self.dqn_target(next_state).max(dim=1, keepdim=True)[0].detach()
-        mask = 1 - done
-        target = (reward + self.gamma * next_q_value * mask).to(self.device)
-
-        # calculate dqn loss
-        loss = F.smooth_l1_loss(curr_q_value, target)
-
-        return loss
-
-    def _target_hard_update(self):
-        """Hard update: target <- local."""
-        self.dqn_target.load_state_dict(self.dqn.state_dict())
-
     def seed_agent(self, seed):
+        """We refer to the Agent class docstring."""
 
         torch.manual_seed(seed)
         if torch.backends.cudnn.enabled:
@@ -404,38 +398,43 @@ class DQNAgent(Agent):
 
         return
 
-    # Making a save method to save a trained model
-    def save(self, filename, directory):
-        torch.save(self.dqn.state_dict(), "%s/%s_dqn.pth" % (directory, filename))
-        torch.save(
-            self.dqn_target.state_dict(), "%s/%s_dqn_target.pth" % (directory, filename)
-        )
+    def update_model(self) -> torch.Tensor:
+        """Update the model by gradient descent."""
+        samples = self.replay_buffer.sample_batch()
 
-    # Making a load method to load a pre-trained model
-    def load(self, filename, directory):
-        self.dqn.load_state_dict(torch.load("%s/%s_dqn.pth" % (directory, filename)))
-        self.dqn_target.load_state_dict(
-            torch.load("%s/%s_dqn_target.pth" % (directory, filename))
-        )
+        loss = self._compute_dqn_loss(samples)
 
-    def log_dict(self) -> Dict[str, Any]:
-        log_dict = {
-            "is_test": self.is_test,
-            "memory_size": self.memory_size,
-            "batch_size": self.batch_size,
-            "target_update": self.target_update,
-            "actor_update": self.actor_update,
-            "epsilon_decay": self.epsilon_decay,
-            "max_epsilon": self.max_epsilon,
-            "min_epsilon": self.min_epsilon,
-            "lr": self.lr,
-            "gamma": self.gamma,
-            "inside_dim": self.inside_dim,
-            "num_hidden_layers": self.num_hidden_layers,
-            "seed": self.seed,
-        }
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
-        return log_dict
+        return loss.item()
+
+    def _compute_dqn_loss(self, samples: Dict[str, np.ndarray]) -> torch.Tensor:
+        """Return dqn loss."""
+        device = self.device  # for shortening the following lines
+        state = torch.FloatTensor(samples["obs"]).to(device)
+        next_state = torch.FloatTensor(samples["next_obs"]).to(device)
+        action = torch.LongTensor(samples["acts"].reshape(-1, 1)).to(device)
+        reward = torch.FloatTensor(samples["rews"].reshape(-1, 1)).to(device)
+        done = torch.FloatTensor(samples["done"].reshape(-1, 1)).to(device)
+
+        # current estimation of Q value
+        curr_q_value = self.dqn(state).gather(1, action)
+        # estimated future Q value
+        next_q_value = self.dqn_target(next_state).max(dim=1, keepdim=True)[0].detach()
+        mask = 1 - done
+        # Bellman equation (in theory, it is equal to current Q value if Q is optinal)
+        target = (reward + self.gamma * next_q_value * mask).to(self.device)
+
+        # calculate dqn loss
+        loss = F.smooth_l1_loss(curr_q_value, target)
+
+        return loss
+
+    def _target_hard_update(self):
+        """Hard update: target <- local."""
+        self.dqn_target.load_state_dict(self.dqn.state_dict())
 
 
 class ReplayBuffer:

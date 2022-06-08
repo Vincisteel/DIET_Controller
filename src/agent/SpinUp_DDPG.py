@@ -42,8 +42,8 @@ class DDPGSpinUp(Agent):
             env_fn : A function which creates a copy of the environment.
                 The environment must satisfy the OpenAI Gym API.
             actor_critic: The constructor method for a PyTorch Module with an ``act`` 
-                method, a ``pi`` module, and a ``q`` module. The ``act`` method and
-                ``pi`` module should accept batches of observations as inputs,
+                method, a ``policy`` module, and a ``q`` module. The ``act`` method and
+                ``policy`` module should accept batches of observations as inputs,
                 and ``q`` should accept a batch of observations and a batch of 
                 actions as inputs. When called, these should return:
                 ===========  ================  ======================================
@@ -51,19 +51,14 @@ class DDPGSpinUp(Agent):
                 ===========  ================  ======================================
                 ``act``      (batch, act_dim)  | Numpy array of actions for each 
                                                | observation.
-                ``pi``       (batch, act_dim)  | Tensor containing actions from policy
+                ``policy``       (batch, act_dim)  | Tensor containing actions from policy
                                                | given observations.
                 ``q``        (batch,)          | Tensor containing the current estimate
                                                | of Q* for the provided observations
                                                | and actions. (Critical: make sure to
                                                | flatten this!)
                 ===========  ================  ======================================
-            ac_kwargs (dict): Any kwargs appropriate for the ActorCritic object 
-                you provided to DDPG.
             seed (int): Seed for random number generators.
-            steps_per_epoch (int): Number of steps of interaction (state-action pairs) 
-                for the agent and the environment in each epoch.
-            epochs (int): Number of epochs to run and train agent.
             replay_size (int): Maximum length of replay buffer.
             gamma (float): Discount factor. (Always between 0 and 1.)
             polyak (float): Interpolation factor in polyak averaging for target 
@@ -75,23 +70,6 @@ class DDPGSpinUp(Agent):
                 close to 1.)
             lr (float): Learning rate
             batch_size (int): Minibatch size for SGD.
-            start_steps (int): Number of steps for uniform-random action selection,
-                before running real policy. Helps exploration.
-            update_after (int): Number of env interactions to collect before
-                starting to do gradient descent updates. Ensures replay buffer
-                is full enough for useful updates.
-            update_every (int): Number of env interactions that should elapse
-                between gradient descent updates. Note: Regardless of how long 
-                you wait between updates, the ratio of env steps to gradient steps 
-                is locked to 1.
-            act_noise (float): Stddev for Gaussian exploration noise added to 
-                policy at training time. (At test time, no noise is added.)
-            num_test_episodes (int): Number of episodes to test the deterministic
-                policy at the end of each epoch.
-            max_ep_len (int): Maximum length of trajectory / episode / rollout.
-            logger_kwargs (dict): Keyword args for EpochLogger.
-            save_freq (int): How often (in terms of gap between epochs) to save
-                the current policy and value function.
         """
 
         super().__init__()
@@ -140,7 +118,7 @@ class DDPGSpinUp(Agent):
         )
 
         # Set up optimizers for policy and q-function
-        self.pi_optimizer = Adam(self.ac.pi.parameters(), lr=self.lr)
+        self.policy_optimizer = Adam(self.ac.policy.parameters(), lr=self.lr)
         self.q_optimizer = Adam(self.ac.q.parameters(), lr=self.lr)
 
         # transition to store in memory
@@ -158,19 +136,19 @@ class DDPGSpinUp(Agent):
         q = self.ac.q(obs, action)
         # Bellman backup for Q function
         # with torch.no_grad():
-        q_pi_targ = self.ac_targ.q(next_obs, self.ac_targ.pi(next_obs))
-        backup = reward + self.gamma * (1 - done) * q_pi_targ
+        q_policy_targ = self.ac_targ.q(next_obs, self.ac_targ.policy(next_obs))
+        backup = reward + self.gamma * (1 - done) * q_policy_targ
 
         # MSE loss against Bellman backup
         loss_q = F.mse_loss(q, backup)
 
         return loss_q
 
-    # Set up function for computing DDPG pi loss
-    def compute_loss_pi(self, data):
+    # Set up function for computing DDPG policy loss
+    def compute_loss_policy(self, data):
         obs = data["obs"]
-        q_pi = self.ac.q(obs, self.ac.pi(obs))
-        return -q_pi.mean()
+        q_policy = self.ac.q(obs, self.ac.policy(obs))
+        return -q_policy.mean()
 
     # Set up model saving
 
@@ -186,18 +164,18 @@ class DDPGSpinUp(Agent):
         # computing gradients for it during the policy learning step.
         for p in self.ac.q.parameters():
             p.requires_grad = False
-        # Next run one gradient descent step for pi.
-        self.pi_optimizer.zero_grad()
-        loss_pi = self.compute_loss_pi(data)
-        loss_pi.backward()
-        self.pi_optimizer.step()
+        # Next run one gradient descent step for policy.
+        self.policy_optimizer.zero_grad()
+        loss_policy = self.compute_loss_policy(data)
+        loss_policy.backward()
+        self.policy_optimizer.step()
         # Unfreeze Q-network so you can optimize it at next DDPG step.
         for p in self.ac.q.parameters():
             p.requires_grad = True
 
         self.update_target()
 
-        return loss_pi.item()
+        return loss_policy.item()
 
     def update_target(self):
         # Finally, update target networks by polyak averaging.
@@ -465,7 +443,7 @@ class DDPGSpinUp(Agent):
     def save(self, filename, directory):
         torch.save(self.ac.q.state_dict(), "%s/%s_ddpg_q.pth" % (directory, filename))
         torch.save(
-            self.ac.pi.state_dict(), "%s/%s_ddpg_policy.pth" % (directory, filename)
+            self.ac.policy.state_dict(), "%s/%s_ddpg_policy.pth" % (directory, filename)
         )
         # target
         torch.save(
@@ -473,7 +451,7 @@ class DDPGSpinUp(Agent):
             "%s/%s_ddpg_q_target.pth" % (directory, filename),
         )
         torch.save(
-            self.ac_targ.pi.state_dict(),
+            self.ac_targ.policy.state_dict(),
             "%s/%s_ddpg_policy_target.pth" % (directory, filename),
         )
 
@@ -482,7 +460,7 @@ class DDPGSpinUp(Agent):
         self.ac.q.load_state_dict(
             torch.load("%s/%s_ddpg_q.pth" % (directory, filename))
         )
-        self.ac.pi.load_state_dict(
+        self.ac.policy.load_state_dict(
             torch.load("%s/%s_ddpg_policy.pth" % (directory, filename))
         )
 
@@ -491,7 +469,7 @@ class DDPGSpinUp(Agent):
         self.ac_targ.q.load_state_dict(
             torch.load("%s/%s_ddpg_q_target.pth" % (directory, filename))
         )
-        self.ac_targ.pi.load_state_dict(
+        self.ac_targ.policy.load_state_dict(
             torch.load("%s/%s_ddpg_policy_target.pth" % (directory, filename))
         )
 
@@ -528,14 +506,14 @@ class MLPActor(nn.Module):
         max_action: float,
     ):
         super().__init__()
-        pi_sizes = [obs_dim] + list(hidden_sizes) + [act_dim]
-        self.pi = mlp(pi_sizes, activation, nn.Sigmoid)
+        policy_sizes = [obs_dim] + list(hidden_sizes) + [act_dim]
+        self.policy = mlp(policy_sizes, activation, nn.Sigmoid)
         self.min_action = min_action
         self.max_action = max_action
 
     def forward(self, obs):
         # Return output from network scaled to action space limits.
-        return self.min_action + self.pi(obs) * (self.max_action - self.min_action)
+        return self.min_action + self.policy(obs) * (self.max_action - self.min_action)
 
 
 class MLPQFunction(nn.Module):
@@ -564,14 +542,14 @@ class MLPActorCritic(nn.Module):
         hidden_sizes = [inside_dim] * num_hidden_layers
 
         # build policy and value functions
-        self.pi = MLPActor(
+        self.policy = MLPActor(
             obs_dim, act_dim, hidden_sizes, activation, min_action, max_action
         )
         self.q = MLPQFunction(obs_dim, act_dim, hidden_sizes, activation)
 
     def act(self, obs):
         with torch.no_grad():
-            return self.pi(obs.T).numpy()
+            return self.policy(obs.T).numpy()
 
 
 class ReplayBuffer:
