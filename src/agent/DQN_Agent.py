@@ -279,18 +279,16 @@ class DQNAgent(Agent):
             lower = episode_num * num_iterations
             upper = (episode_num + 1) * num_iterations
 
-           
-
             len_difference = len(tair) - len(epsilons)
             pad_epsilon = [epsilons[0] for i in range(len_difference)]
             epsilons = pad_epsilon + epsilons
 
             ## extend the length of the loss array such that it is of correct
             # size for plotting
-            losses = [loss for loss in losses for _ in range(self.actor_update)]
-            len_difference = len(tair) - len(losses)
+            temp_losses = [loss for loss in losses for _ in range(self.actor_update)]
+            len_difference = len(tair) - len(temp_losses)
             pad_losses = [0 for i in range(len_difference)]
-            losses = pad_losses + losses
+            temp_losses = pad_losses + temp_losses
 
             summary_df = pd.DataFrame(
                 {
@@ -300,7 +298,7 @@ class DQNAgent(Agent):
                     "Heating": qheat[lower:upper],
                     "Reward": rewards[lower:upper],
                     "Occ": occ[lower:upper],
-                    "Loss": losses[lower:upper],
+                    "Loss": temp_losses[lower:upper],
                     "Epsilon": epsilons[lower:upper],
                 }
             )
@@ -318,6 +316,13 @@ class DQNAgent(Agent):
 
         # plot a summary that contatenates all episodes together for a complete overview of the training
 
+        ## extend the length of the loss array such that it is of correct
+        # size for plotting
+        temp_losses = [loss for loss in losses for _ in range(self.actor_update)]
+        len_difference = len(tair) - len(temp_losses)
+        pad_losses = [0 for i in range(len_difference)]
+        temp_losses = pad_losses + temp_losses
+
         summary_df = pd.DataFrame(
             {
                 "Tair": tair,
@@ -326,7 +331,7 @@ class DQNAgent(Agent):
                 "Heating": qheat,
                 "Reward": rewards,
                 "Occ": occ,
-                "Loss": losses,
+                "Loss": temp_losses,
                 "Epsilon": epsilons,
             }
         )
@@ -393,6 +398,9 @@ class DQNAgent(Agent):
             torch.backends.cudnn.deterministic = True
 
         np.random.seed(seed)
+
+        self.env.action_space.seed(seed)
+        self.env.observation_space.seed(seed)
 
         return
 

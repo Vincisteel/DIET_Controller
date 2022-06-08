@@ -144,6 +144,9 @@ class SimpleEnvironment(Environment):
         ## clipping in the correct range
         action = np.clip(action, self._min_temp, self._max_temp)
 
+        if not (isinstance(action, float)):
+            action = action.flatten()[0]
+
         if self.i % 1000 == 0:
             print("SELECTED ENV ACTION", action)
 
