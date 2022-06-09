@@ -124,6 +124,41 @@ class DDPGSpinUp(Agent):
         # transition to store in memory
         self.transition = list()
 
+    def reset(self) -> Agent:
+
+        self.seed_agent(self.seed)
+        self.is_test = False
+
+        # Create actor-critic module and target networks
+        self.ac = MLPActorCritic(
+            obs_dim=self.env.observation_dim,
+            act_dim=self.env.action_dim,
+            min_action=self.env.min_temp,
+            max_action=self.env.max_temp,
+        )
+        self.ac_targ = deepcopy(self.ac)
+
+        # Freeze target networks with respect to optimizers (only update via polyak averaging)
+        for p in self.ac_targ.parameters():
+            p.requires_grad = False
+
+        # Experience buffer
+        self.replay_buffer = ReplayBuffer(
+            obs_dim=self.env.observation_dim,
+            act_dim=self.env.action_dim,
+            size=self.memory_size,
+            batch_size=self.batch_size,
+        )
+
+        # Set up optimizers for policy and q-function
+        self.policy_optimizer = Adam(self.ac.policy.parameters(), lr=self.lr)
+        self.q_optimizer = Adam(self.ac.q.parameters(), lr=self.lr)
+
+        # transition to store in memory
+        self.transition = list()
+
+        return self
+
     def compute_loss_q(self, data):
         obs, action, reward, next_obs, done = (
             data["obs"],

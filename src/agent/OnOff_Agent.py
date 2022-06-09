@@ -10,7 +10,7 @@ import torch.optim as optim
 import os
 import pandas as pd
 
-from Logger import SimpleLogger
+from logger.SimpleLogger import SimpleLogger
 
 from agent.Agent import Agent
 from environment.Environment import Environment
@@ -44,6 +44,9 @@ class OnOffAgent(Agent):
         next_state, reward, done, info = self.env.step(action)
 
         return next_state, reward, done, info
+
+    def reset(self) -> Agent:
+        return self
 
     def train(
         self,

@@ -12,6 +12,10 @@ from environment.Environment import Environment
 
 
 class SimpleEnvironment(Environment):
+    """ EnergyPlus simple environment. Made to interact with SimpleLogger. Inherits from Environment class.
+    This environment is a wrapper around the EnergyPlus simulation that can be found at EnergyPlus_simulations/simple_simulation.
+    It is a simple environment because there's only a single HVAC setpoint that's being acted on. """
+
     def __init__(
         self,
         # list of parameters to be fetched from the EnergyPlus simulation
@@ -31,7 +35,7 @@ class SimpleEnvironment(Environment):
         modelname: str = "CELLS_v1.fmu",
         # where the EnergyPlus FMU can be found
         simulation_path: str = r"C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\EnergyPlus_simulations\simple_simulation",
-        ## parameters to be found in the idf file
+        # parameters to be found in the idf file
         days: int = 151,
         hours: int = 24,
         minutes: int = 60,
@@ -105,12 +109,18 @@ class SimpleEnvironment(Environment):
         """
         Resets the environment to an initial state and returns an initial observation.
 
+        Arguments:
+        seed(int,optional): seed for seeding the action and observation space
+
         Returns:
             np.array: Element of self.observation_space, representing the HVAC environment dynamics.
         """
 
         self.has_reset = True
+
+        ## seeding the spaces
         self.observation_space.seed(seed)
+        self.action_space.seed(seed)
 
         ## resetting
         self.simtime = 0  # resetting simulation time tracker

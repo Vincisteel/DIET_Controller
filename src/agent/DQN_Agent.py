@@ -9,7 +9,7 @@ import torch.optim as optim
 import os
 import pandas as pd
 
-from Logger import SimpleLogger
+from logger.SimpleLogger import SimpleLogger
 
 from agent.Agent import Agent
 from environment.Environment import Environment
@@ -83,7 +83,7 @@ class DQNAgent(Agent):
         discrete_action_dim: int = self.env.discrete_action_dim
 
         ## setting up memory
-        self.replay_buffer = ReplayBuffer(obs_dim, memory_size, batch_size)
+        self.replay_buffer = ReplayBuffer(obs_dim, self.memory_size, self.batch_size)
 
         # networks: dqn, dqn_target
         self.dqn = Network(
@@ -139,6 +139,46 @@ class DQNAgent(Agent):
             self.replay_buffer.store(*self.transition)
 
         return next_state, reward, done, info
+
+    def reset(self) -> Agent:
+        """We refer to the Agent class docstring."""
+
+        self.epsilon = self.max_epsilon
+
+
+        self.seed_agent(self.seed)
+
+        self.replay_buffer = ReplayBuffer(
+            self.env.observation_dim, self.memory_size, self.batch_size
+        )
+
+        # networks: dqn, dqn_target
+        self.dqn = Network(
+            self.env.observation_dim,
+            self.env.discrete_action_dim,
+            inside_dim=self.inside_dim,
+            num_hidden_layers=self.num_hidden_layers,
+        ).to(self.device)
+
+        self.dqn_target = Network(
+            self.env.observation_dim,
+            self.env.discrete_action_dim,
+            inside_dim=self.inside_dim,
+            num_hidden_layers=self.num_hidden_layers,
+        ).to(self.device)
+        self.dqn_target.load_state_dict(self.dqn.state_dict())
+        self.dqn_target.eval()
+
+        # optimizer
+        self.optimizer = optim.Adam(self.dqn.parameters(), lr=self.lr)
+
+        # transition to store in memory
+        self.transition = list()
+
+        # mode: train / test
+        self.is_test = False
+
+        return self
 
     def save(self, filename, directory):
         """We refer to the Agent class docstring."""

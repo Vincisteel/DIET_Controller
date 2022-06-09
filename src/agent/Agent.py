@@ -28,6 +28,10 @@ class Agent(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def reset(self) -> Agent:
+        """ Reset the agent to its initial state (where it hasn't been trained and such)"""
+
+    @abstractmethod
     def train(
         self, logging_path: str, num_episodes: int, num_iterations: int, log: bool
     ) -> Tuple[str, pd.DataFrame]:

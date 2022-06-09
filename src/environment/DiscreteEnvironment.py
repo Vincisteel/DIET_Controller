@@ -26,7 +26,9 @@ class DiscreteSimpleEnvironment(SimpleEnvironment):
         alpha: float = 1,  # thermal comfort
         beta: float = 1,  # energy consumption
         modelname: str = "CELLS_v1.fmu",
+        # where the EnergyPlus FMU can be found
         simulation_path: str = r"C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\EnergyPlus_simulations\simple_simulation",
+        # parameters to be found in the idf file
         days: int = 151,
         hours: int = 24,
         minutes: int = 60,
@@ -105,11 +107,6 @@ class DiscreteSimpleEnvironment(SimpleEnvironment):
         self.action_to_temp = np.linspace(
             self.min_temp, self.max_temp, self.discrete_action_dim
         )
-
-    def reset(self, seed=42) -> np.ndarray:
-        """ Reset environment, includes seeding"""
-        self.action_space.seed(seed)
-        return super().reset(seed)
 
     def step(self, action: Discrete) -> Tuple[np.ndarray, float, bool, dict]:
         """ Does the step, converts discrete input into continuous temperature for the simuation"""

@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 
 from utils import all_combinations_list
-from Logger import Logger
 from environment.Environment import Environment
 from agent.Agent import Agent
 
@@ -93,7 +92,6 @@ def across_runs(
     agent_arguments: Dict[str, Any],
     parameter: Tuple[str, List[Any]],
     logging_path: str,
-    agent_name: str,
     num_episodes: int,
     num_iterations: int,
     utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
@@ -119,9 +117,8 @@ def across_runs(
 
     for curr_agent_arguments in all_combinations_list(agent_arguments):
 
-        # for example env_name = 'EnergyPlusEnv-v0'
-
-        curr_agent: Agent = agent.from_dict(curr_agent_arguments)
+        # must reset agent before training it again in this case
+        curr_agent: Agent = agent.reset().from_dict(curr_agent_arguments)
 
         results_path, summary_df = curr_agent.train(
             logging_path=logging_path,
@@ -146,16 +143,7 @@ def across_runs(
         "CVaR": cvar,
     }
 
-    logger = Logger(
-        logging_path=logging_path,
-        agent_name=agent_name,
-        num_episodes=num_episodes,
-        num_iterations=num_iterations,
-    )
-
-    logger.log_performance_pipeline(results_dict)
-
-    return (iqr, cvar)
+    return (iqr, cvar, results_dict)
 
 
 # agent arguemnts most proabably from agent.log_dict or extract them from the json using log_dict.keys()
