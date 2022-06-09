@@ -14,6 +14,8 @@ from environment.Environment import Environment
 class SimpleEnvironment(Environment):
     def __init__(
         self,
+        # list of parameters to be fetched from the EnergyPlus simulation
+        # defines the observation space
         param_list: List[str] = [
             "Tair",
             "RH",
@@ -23,11 +25,13 @@ class SimpleEnvironment(Environment):
             "Occ",
         ],  # what we get from the model at each step
         min_temp: int = 16,  # minimum temperature for action
-        max_temp: int = 21,
+        max_temp: int = 21,  # maximum temperature for action
         alpha: float = 1,  # thermal comfort
         beta: float = 1,  # energy consumption
         modelname: str = "CELLS_v1.fmu",
+        # where the EnergyPlus FMU can be found
         simulation_path: str = r"C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\EnergyPlus_simulations\simple_simulation",
+        ## parameters to be found in the idf file
         days: int = 151,
         hours: int = 24,
         minutes: int = 60,
@@ -48,12 +52,15 @@ class SimpleEnvironment(Environment):
         self.numsteps = (
             days * hours * ep_timestep
         )  # total number of simulation steps during the simulationx
+
         self.timestop = (
             days * hours * minutes * seconds
         )  # total time length of our simulation
+
         self.secondstep = (
             self.timestop / self.numsteps
         )  # length of a single step in seconds
+
         self.simtime = 0  # keeps track of current time in the simulation
         self.model = None
 
@@ -67,6 +74,7 @@ class SimpleEnvironment(Environment):
         ## defines the data that we fetch from the model at each step to build our observation
         self.param_list = param_list
 
+        ## defining the observation space as a continuous space
         self._observation_space = Box(
             low=-np.inf, high=np.inf, shape=(self.observation_dim,)
         )
@@ -75,18 +83,22 @@ class SimpleEnvironment(Environment):
         self.has_reset = False
         self.curr_obs = np.array([])
 
-        self.i = 0
-
     @property
     def observation_space(self):
+        """We refer to the Environment class docstring."""
+
         return self._observation_space
 
     @property
     def action_dim(self):
+        """We refer to the Environment class docstring."""
+
         return 1
 
     @property
     def observation_dim(self):
+        """We refer to the Environment class docstring."""
+
         return len(self.param_list)
 
     def reset(self, seed=42) -> np.ndarray:
@@ -94,7 +106,7 @@ class SimpleEnvironment(Environment):
         Resets the environment to an initial state and returns an initial observation.
 
         Returns:
-            np.array: Element of self.observation_space, representing the HVAC environment dynamics
+            np.array: Element of self.observation_space, representing the HVAC environment dynamics.
         """
 
         self.has_reset = True
@@ -110,17 +122,22 @@ class SimpleEnvironment(Environment):
         opts["ncp"] = self.numsteps  # Specifies the number of timesteps
         opts["initialize"] = True
         simtime = 0
+
+        ## critical steps
         self.model.reset()
         self.model.instantiate_slave()
         self.model.initialize(simtime, self.timestop)
+
+        ## getting first observation
         self.curr_obs = np.array(list(self.model.get(self.param_list)))
 
         return self.curr_obs
 
-    def step(self, action: float) -> Tuple[np.ndarray, float, bool, dict]:
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, dict]:
         """
 
-        Run one timestep of the environment’s dynamics. When end of episode is reached, you are responsible for calling reset() to reset this environment’s state. 
+        Run one timestep of the environment’s dynamics. When end of episode is reached, 
+        you are responsible for calling reset() to reset this environment’s state. 
         Accepts an action and returns a tuple (observation, reward, done, info).
 
         Args:
@@ -129,12 +146,15 @@ class SimpleEnvironment(Environment):
 
         Return:
 
-        observation (object): agent’s observation of the current environment. This will be an element of self.observation_space, representing the HVAC environment dynamics
-        reward (float) : amount of reward returned after previous action
-        done (bool): whether the episode has ended, in which case further step() calls will return undefined results. 
-        info (dict): contains auxiliary diagnostic information (helpful for debugging, learning, and logging). 
+        observation (np.ndarray): agent’s observation of the current environment. 
+        This will be an element of self.observation_space, representing the HVAC environment dynamics.
+        reward (float) : Amount of reward returned after previous action.
+        done (bool): Whether the simulation episode has ended, in which case further step() 
+        calls will return undefined results. 
+        info (dict): Contains auxiliary diagnostic information (helpful for debugging, learning, and logging). 
         """
 
+        # checking if environment has been reset
         if not (self.has_reset):
             raise InitializationError("Must reset the environment before using it")
 
@@ -145,17 +165,15 @@ class SimpleEnvironment(Environment):
         action = np.clip(action, self._min_temp, self._max_temp)
 
         if not (isinstance(action, float)):
-            action = action.flatten()[0]
+            action = action.ravel()[0]
 
-        if self.i % 1000 == 0:
-            print("SELECTED ENV ACTION", action)
-
-        self.i += 1
-
+        ## setting the HVAC setpoint temperature (name defined in the idf file)
         self.model.set("Thsetpoint_diet", action)
         self.model.do_step(
             current_t=self.simtime, step_size=self.secondstep, new_step=True
         )
+
+        ## getting the current observation from the EnergyPlus environment
         self.curr_obs = np.array(list(self.model.get(self.param_list)))
 
         self.simtime += self.secondstep
@@ -170,6 +188,8 @@ class SimpleEnvironment(Environment):
         return next_state, reward, done, info
 
     def log_dict(self):
+        """We refer to the Environment class docstring."""
+
         log_dict = {
             "param_list": self.param_list,
             "observation_dim": self.observation_dim,
@@ -190,7 +210,9 @@ class SimpleEnvironment(Environment):
 
     def observation_to_dict(self, obs: np.ndarray) -> Dict[str, float]:
         """
-        Given an np.array of the current observation, returns a dictionary with the key being the string description of each element
+        Given an np.array of the current observation, 
+        returns a dictionary with the key being the string description of each element.
+        This helps for logging purposes.
 
         Args:
             obs (np.array): observation of the environment, must be an element of self.observation_space
@@ -202,7 +224,7 @@ class SimpleEnvironment(Environment):
     def compute_reward(self, obs: np.ndarray, alpha: float, beta: float):
         """
         Given an observation of the environment, computes the reward
-        based on energy consumption and thermal comfort 
+        based on energy consumption and thermal comfort.
 
         Args:
             obs (Box): observation of the environment
@@ -210,7 +232,7 @@ class SimpleEnvironment(Environment):
             beta (float): parameter for energy consumption
 
         Returns:
-            _type_: _description_
+            reward(float): reward for the given observation
         """
         pmv = self.comfPMV(obs)
 
@@ -226,6 +248,7 @@ class SimpleEnvironment(Environment):
         return reward
 
     def comfPMV(self, obs: np.ndarray):
+        """ Utility function to compute thermal comfort according to https://comfort.cbe.berkeley.edu/"""
 
         dict_values = self.observation_to_dict(obs)
 
@@ -305,4 +328,6 @@ class SimpleEnvironment(Environment):
 
 
 class InitializationError(Exception):
+    """ Simple custom error to enforce reset of the environment before usage"""
+
     pass

@@ -10,19 +10,6 @@ class Agent(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def from_dict(self, dict_arguments: Dict[str, Any]) -> Agent:
-        """Given a dictionary of key value pairs where the key is the name of an agent attribute
-         (e.g. {"memory_size": 1000, "batch_size": 32,}), return a new agent with the attributes are updated with the new values.
-
-        Args:
-            dict_arguments (Dict[str, Any]): key: name of attribute, value: new value
-
-        Returns:
-            Agent: A new agent updated with the new attributes.
-        """
-        pass
-
-    @abstractmethod
     def select_action(self, state: np.ndarray):
         """Given a state/observation of the environment, return the optimal action according to the policy
 
@@ -119,6 +106,22 @@ class Agent(metaclass=ABCMeta):
             filename (str): Prefix for all the filenames of the saved data structures (e.g. "episode_1")
         """
         pass
+
+    def from_dict(self, dict_arguments: Dict[str, Any]) -> Agent:
+        """Given a dictionary of key value pairs where the key is the name of an agent attribute
+         (e.g. {"memory_size": 1000, "batch_size": 32,}), return a new agent with the attributes are updated with the new values.
+
+        Args:
+            dict_arguments (Dict[str, Any]): key: name of attribute, value: new value
+
+        Returns:
+            Agent: A new agent updated with the new attributes.
+        """
+
+        for k, v in dict_arguments.items():
+            setattr(self, k, v)
+
+        return self
 
     # Simple python properties to ensure easy attribute access
 

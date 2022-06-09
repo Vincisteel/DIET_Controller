@@ -18,32 +18,29 @@ from environment.Environment import Environment
 
 class OnOffAgent(Agent):
     def __init__(
-        self, env: Environment, is_step:bool = True,
+        self, env: Environment, is_step: bool = True,
     ):
 
         self.env = env
 
-    def from_dict(self, dict_arguments: Dict[str, Any]) -> Agent:
-        for k, v in dict_arguments.items():
-            setattr(self, k, v)
-
-        return self
-
     def select_action(self, state: np.ndarray) -> np.ndarray:
+        """We refer to the Agent class docstring."""
 
         d = self.env.observation_to_dict(state)
         occ = d["Occ"][0]
         if self.is_step:
             selected_action = self.env.min_temp if occ == 0.0 else self.env.max_temp
         else:
-            selected_action = self.env.min_temp + occ*(self.env.max_temp - self.env.min_temp)
+            selected_action = self.env.min_temp + occ * (
+                self.env.max_temp - self.env.min_temp
+            )
 
         return selected_action
 
     def step(
         self, action: np.ndarray
     ) -> Tuple[np.ndarray, float, bool, Dict[str, Any]]:
-        """Take an action and return the response of the env."""
+        """We refer to the Agent class docstring."""
         next_state, reward, done, info = self.env.step(action)
 
         return next_state, reward, done, info
@@ -56,7 +53,7 @@ class OnOffAgent(Agent):
         log=True,
         is_test=False,
     ) -> Tuple[str, pd.DataFrame]:
-        """Train the agent."""
+        """We refer to the Agent class docstring."""
         self.is_test = is_test
 
         ## check num_iterations
@@ -185,6 +182,7 @@ class OnOffAgent(Agent):
     def test(
         self, logging_path: str, num_iterations=None, num_episodes=1, log=True
     ) -> Tuple[str, pd.DataFrame]:
+        """We refer to the Agent class docstring."""
 
         return self.train(
             is_test=True,

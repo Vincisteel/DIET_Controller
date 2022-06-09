@@ -186,12 +186,6 @@ class DDPGSpinUp(Agent):
                 p_targ.data.mul_(self.polyak)
                 p_targ.data.add_((1 - self.polyak) * p.data)
 
-    def from_dict(self, dict_arguments: Dict[str, Any]) -> Agent:
-        for k, v in dict_arguments.items():
-            setattr(self, k, v)
-
-        return self
-
     def select_action(self, obs: np.ndarray) -> np.ndarray:
 
         # epsilon greedy policy

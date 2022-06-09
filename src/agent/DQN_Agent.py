@@ -111,13 +111,6 @@ class DQNAgent(Agent):
         # mode: train / test
         self.is_test = False
 
-    def from_dict(self, dict_arguments: Dict[str, Any]) -> Agent:
-        """We refer to the Agent class docstring."""
-        for k, v in dict_arguments.items():
-            setattr(self, k, v)
-
-        return self
-
     def select_action(self, state: np.ndarray) -> np.ndarray:
         """We refer to the Agent class docstring."""
         # epsilon greedy policy

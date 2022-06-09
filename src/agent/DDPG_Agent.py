@@ -163,12 +163,6 @@ class DDPG_Agent(Agent):
         self.replay_buffer = ReplayBuffer()
         self.is_test = False
 
-    def from_dict(self, dict_arguments: Dict[str, Any]) -> Agent:
-        for k, v in dict_arguments.items():
-            setattr(self, k, v)
-
-        return self
-
     def select_action(self, state):
         with torch.no_grad():
             state = torch.Tensor(state.reshape(1, -1)).to(self.device)
