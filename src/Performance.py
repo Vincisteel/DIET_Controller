@@ -137,7 +137,7 @@ def across_runs(
     results_dict = {
         "parameter": parameter,
         "utility_function": utility_function.__name__,
-        "utilities_results": utilities_results,
+        "utilities_results": utilities_results.tolist(),
         "results_path_list": results_path_list,
         "IQR": iqr,
         "CVaR": cvar,

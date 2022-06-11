@@ -13,20 +13,27 @@ Parameter = namedtuple("Parameter", ["name", "value"])
 
 
 # Example of how to use the function:
+
+# Can be found here: https://haroldbenoit.github.io/enac-docs/docs/technical-reference/utils
+
+# searching_directory = r"C:\Users\DIET_Controller"
 #
-# searching_directory = r"C:\\Users\\Harold\\Desktop\\ENAC-Semester-Project\\DIET_Controller"
+#  conditions={
+#      "alpha": ["<",20], # sessions where alpha was less than 20
+#      "beta": [">",2], # sessions where beta was bigger than 2
+#      "num_iterations": ["=",21744], # sessions where the whole simulation episode was used
+#      "is_test": ["=", True] # only testing sessions
+#  }
 #
-# conditions={
-#     "beta": ["<",20],
-#     "alpha": ["<",20]
-#     "num_iterations": ["=",21744] # to only have have trainings where the full simulation was used
-# }
+# ## This example is specific to SimpleEnvironment
+# ## One may define
+#  conditions["pmv"] = {
+#          "[-inf,-2]": ["<",0.2], # less than 20% of the time spent in the [-inf,-2] pmv interval
+#          "[-0.5,0.0]": [">", 0.5] # more than 50% of the time spent in the [-0.5,0.0] pmv interval
+#  }
 #
-# conditions["pmv"] = {
-#         "[-inf,-2]": [">",0.2]
-# }
-#
-# path_list = search_paths(searching_directory,conditions)
+# ## This will return the list of absolute paths of log folders satisfying the above conditions.
+#  path_list = search_paths(searching_directory,conditions)
 
 
 def search_paths(searching_directory, conditions, top_k=1):

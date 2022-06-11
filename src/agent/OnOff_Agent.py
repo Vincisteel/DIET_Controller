@@ -20,8 +20,25 @@ class OnOffAgent(Agent):
     def __init__(
         self, env: Environment, is_step: bool = True,
     ):
+        """"Simple OnOff Agent. Made to interact with ContinuousEnvironment. Inherits from Agent class.
+
+        The OnOff Agent is a very simple agent.
+
+        It has two possible policies:
+
+        If is_step = True, then the agent will set the temperature to the min temperature when there's no occupancy
+        and to the max temperature when there's occupancy. This policy may be called a 'step function'.
+
+        If is_step=False, then the agent will set the temperature as a linear function of occupancy i.e.
+        temperature = min_temperature + occupancy*(max_temperature - min_temperature)
+
+        Args:
+            env (Environment): Environment inheriting from the Environment class.
+            is_step (bool, optional): Whether the policy is a step function or linear function. Defaults to True.
+        """
 
         self.env = env
+        self.is_step = is_step
 
     def select_action(self, state: np.ndarray) -> np.ndarray:
         """We refer to the Agent class docstring."""

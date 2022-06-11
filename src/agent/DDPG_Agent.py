@@ -14,41 +14,43 @@ import envs
 import os
 import pandas as pd
 
-from Logger import SimpleLogger
+from logger.SimpleLogger import SimpleLogger
 from environment.Environment import Environment
 
 
-# Initializing the Experience Replay Memory
-class ReplayBuffer(object):
-    def __init__(self, max_size=1e6):
-        self.storage = []
-        self.max_size = max_size
-        self.ptr = 0
+class ReplayBuffer:
+    """A simple numpy replay buffer."""
 
-    def add(self, transition):
-        if len(self.storage) == self.max_size:
-            self.storage[int(self.ptr)] = transition
-            self.ptr = (self.ptr + 1) % self.max_size
-        else:
-            self.storage.append(transition)
+    def __init__(self, obs_dim: int, size: int, batch_size: int = 32):
+        self.obs_dim = obs_dim
+        self.obs_buf = np.zeros([size, obs_dim], dtype=np.float32)
+        self.next_obs_buf = np.zeros([size, obs_dim], dtype=np.float32)
+        self.acts_buf = np.zeros([size], dtype=np.float32)
+        self.rews_buf = np.zeros([size], dtype=np.float32)
+        self.max_size, self.batch_size = size, batch_size
+        self.ptr, self.size, = 0, 0
 
-    def sample(self, batch_size):
+    def store(
+        self, obs: np.ndarray, act: np.ndarray, rew: float, next_obs: np.ndarray,
+    ):
+        self.obs_buf[self.ptr] = obs.reshape(self.obs_buf[self.ptr].shape)
+        self.next_obs_buf[self.ptr] = next_obs.reshape(self.obs_buf[self.ptr].shape)
+        self.acts_buf[self.ptr] = act
+        self.rews_buf[self.ptr] = rew
+        self.ptr = (self.ptr + 1) % self.max_size
+        self.size = min(self.size + 1, self.max_size)
 
-        ind = np.random.randint(0, len(self.storage), size=batch_size)
-        batch_states, batch_next_states, batch_actions, batch_rewards = [], [], [], []
-
-        for i in ind:
-            state, next_state, action, reward = self.storage[i]
-            batch_states.append(np.array(state, copy=False))
-            batch_next_states.append(np.array(next_state, copy=False))
-            batch_actions.append(np.array(action, copy=False))
-            batch_rewards.append(np.array(reward, copy=False))
+    def sample_batch(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        idxs = np.random.choice(self.size, size=self.batch_size, replace=False)
         return (
-            np.array(batch_states),
-            np.array(batch_next_states),
-            np.array(batch_actions),
-            np.array(batch_rewards).reshape(-1, 1),
+            self.obs_buf[idxs],
+            self.next_obs_buf[idxs],
+            self.acts_buf[idxs],
+            self.rews_buf[idxs],
         )
+
+    def __len__(self) -> int:
+        return self.size
 
 
 # Building a neural network for the actor model and a neural network for the actor target
@@ -93,6 +95,7 @@ class DDPG_Agent(Agent):
     def __init__(
         self,
         env: Environment,
+        memory_size: int = 1000,
         batch_size: int = 128,
         discount: float = 0.99,
         tau: float = 0.05,
@@ -108,7 +111,7 @@ class DDPG_Agent(Agent):
         self.seed_agent(seed)
 
         self.env = env
-
+        self.memory_size = memory_size
         self.num_training_iterations = num_training_iterations
         self.num_random_episodes = num_random_episodes
 
@@ -160,8 +163,47 @@ class DDPG_Agent(Agent):
             "Occ": {"secondary_y": None, "range": None, "unit": "(-)",},
         }
 
-        self.replay_buffer = ReplayBuffer()
+        self.replay_buffer = ReplayBuffer(
+            batch_size=self.batch_size,
+            size=self.memory_size,
+            obs_dim=self.env.observation_dim,
+        )
         self.is_test = False
+
+    def reset(self) -> Agent:
+        self.seed_agent(self.seed)
+
+        self.actor = Actor(
+            self.env.observation_dim,
+            self.env.action_dim,
+            min_action=self.env.min_temp,
+            max_action=self.env.max_temp,
+        ).to(self.device)
+        self.actor_target = Actor(
+            self.env.observation_dim,
+            self.env.action_dim,
+            min_action=self.env.min_temp,
+            max_action=self.env.max_temp,
+        ).to(self.device)
+        self.actor_target.load_state_dict(self.actor.state_dict())
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr)
+        self.critic = Critic(self.env.observation_dim, self.env.action_dim).to(
+            self.device
+        )
+        self.critic_target = Critic(self.env.observation_dim, self.env.action_dim).to(
+            self.device
+        )
+        self.critic_target.load_state_dict(self.critic.state_dict())
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr)
+
+        self.replay_buffer = ReplayBuffer(
+            batch_size=self.batch_size,
+            size=self.memory_size,
+            obs_dim=self.env.observation_dim,
+        )
+        self.is_test = False
+
+        return self
 
     def select_action(self, state):
         with torch.no_grad():
@@ -251,9 +293,10 @@ class DDPG_Agent(Agent):
                 heat = d["Qheat"][0]
                 qheat.append(heat)
                 occ.append(d["Occ"][0])
-                self.replay_buffer.add(
-                    (state.flatten(), next_state.flatten(), action, reward)
+                self.replay_buffer.store(
+                    obs=state, next_obs=next_state, act=np.array(action), rew=reward
                 )
+
                 state = next_state
 
             lower = episode_num * num_iterations
@@ -337,6 +380,7 @@ class DDPG_Agent(Agent):
 
         log_dict = {
             "is_test": self.is_test,
+            "memory_size": self.memory_size,
             "batch_size": self.batch_size,
             "discount": self.discount,
             "tau": self.tau,
@@ -370,7 +414,7 @@ class DDPG_Agent(Agent):
                 batch_next_states,
                 batch_actions,
                 batch_rewards,
-            ) = self.replay_buffer.sample(self.batch_size)
+            ) = self.replay_buffer.sample_batch()
 
             state = torch.Tensor(batch_states).to(self.device)
             next_state = torch.Tensor(batch_next_states).to(self.device)
@@ -421,10 +465,10 @@ class DDPG_Agent(Agent):
             # Step 12: We update our Actor model by performing gradient ascent on the output of the first Critic model
             ## CHECK HERE
             temporary = self.critic.forward(state, self.actor(state))
-            actor_loss = -temporary.mean()  ## temporary.std()
-            print(
-                f"MEAN: {temporary.mean()}, STD: {temporary.std()} ACTOR LOSS:{actor_loss}"
-            )
+            actor_loss = - temporary.mean()/temporary.std()  ## temporary.std()
+            #print(
+            #    f"MEAN: {temporary.mean()}, STD: {temporary.std()} ACTOR LOSS:{actor_loss}"
+            #)
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
             self.actor_optimizer.step()

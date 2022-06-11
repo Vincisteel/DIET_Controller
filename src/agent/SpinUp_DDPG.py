@@ -12,7 +12,7 @@ from torch.optim import Adam
 import os
 import torch.nn.functional as F
 
-from Logger import SimpleLogger
+from logger.SimpleLogger import SimpleLogger
 from agent.Agent import Agent
 from environment.Environment import Environment
 
