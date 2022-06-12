@@ -1,14 +1,19 @@
 from typing import Dict, List, Tuple, Any, Callable
-
 from pathlib import Path
 from collections import namedtuple
-
+import numpy as np
+import pandas as pd
+from agent.Agent import Agent
+from typing import Dict, List, Tuple, Any
+import json
+import os
+from pathlib import Path
+from collections import namedtuple
+from itertools import product
 import numpy as np
 import pandas as pd
 
-from utils import all_combinations_list
-from environment.Environment import Environment
-from agent.Agent import Agent
+Parameter = namedtuple("Parameter", ["name", "value"])
 
 
 # THE IDEA IS TO FIRST FIND THE BEST CONTROLLER USING ACROSS_TIME
@@ -18,18 +23,24 @@ from agent.Agent import Agent
 
 
 # ALREADY DEFINED UTILITY FUNCTIONS
+@staticmethod
 def cumulative_reward(data: pd.DataFrame) -> float:
     return np.cumsum(np.array(data["Reward"]))[-1]
 
 
+@staticmethod
+def cumulative_heating(data: pd.DataFrame) -> float:
+    return np.cumsum(np.array(data["Heating"]))[-1]
+
+
 # STATISTICS COMPUTATION
-
-
-def IQR(arr: np.ndarray):
+@staticmethod
+def IQR(arr: np.ndarray) -> float:
     return np.quantile(arr, 0.75) - np.quantile(arr, 0.25)
 
 
-def CVaR(arr: np.ndarray, alpha: float = 0.05):
+@staticmethod
+def CVaR(arr: np.ndarray, alpha: float = 0.05) -> float:
     VaR = np.quantile(arr, alpha)
     return arr[arr < VaR].mean()
 
@@ -37,6 +48,7 @@ def CVaR(arr: np.ndarray, alpha: float = 0.05):
 # ACROSS_TIME
 
 
+@staticmethod
 def compute_dispersion_across_time(
     data: pd.DataFrame, column: str, window: int
 ) -> float:
@@ -51,6 +63,7 @@ def compute_dispersion_across_time(
     return iqr
 
 
+@staticmethod
 def compute_risk_across_time(
     data: pd.DataFrame, column: str, alpha: float = 0.05
 ) -> float:
@@ -62,6 +75,7 @@ def compute_risk_across_time(
     return CVaR(np.array(row), alpha=alpha)
 
 
+@staticmethod
 def across_time(
     data: pd.DataFrame,
     utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
@@ -84,9 +98,7 @@ def across_time(
     return (utility, dispersion, risk)
 
 
-# ACROSS_RUNS
-
-
+@staticmethod
 def across_runs(
     agent: Agent,
     agent_arguments: Dict[str, Any],
@@ -146,8 +158,9 @@ def across_runs(
     return (iqr, cvar, results_dict)
 
 
-# agent arguemnts most proabably from agent.log_dict or extract them from the json using log_dict.keys()
+# agent arguments most proabably from agent.log_dict or extract them from the json using log_dict.keys()
 # same thing for env_arguments
+@staticmethod
 def across_fixed_policy(
     agent: Agent,
     num_testing: int,
@@ -191,3 +204,148 @@ def across_fixed_policy(
     # perform the tests ourselves by just using a policy
     # need to know the environment parameters, get from the json and set parameters
     # same idea for the agent, load everything from the json,  and put him in test mode, i guess
+
+
+# Example of how to use the function:
+
+# Can be found here: https://haroldbenoit.github.io/enac-docs/docs/technical-reference/utils
+
+# searching_directory = r"C:\Users\DIET_Controller"
+#
+#  conditions={
+#      "alpha": ["<",20], # sessions where alpha was less than 20
+#      "beta": [">",2], # sessions where beta was bigger than 2
+#      "num_iterations": ["=",21744], # sessions where the whole simulation episode was used
+#      "is_test": ["=", True] # only testing sessions
+#  }
+#
+# ## This example is specific to SimpleEnvironment
+# ## One may define
+#  conditions["pmv"] = {
+#          "[-inf,-2]": ["<",0.2], # less than 20% of the time spent in the [-inf,-2] pmv interval
+#          "[-0.5,0.0]": [">", 0.5] # more than 50% of the time spent in the [-0.5,0.0] pmv interval
+#  }
+#
+# ## This will return the list of absolute paths of log folders satisfying the above conditions.
+#  path_list = search_paths(searching_directory,conditions)
+
+
+@staticmethod
+def search_paths(searching_directory, conditions, utility_function: Callable[[pd.DataFrame], float] = cumulative_reward, top_k=1):
+
+    ## list of paths satisfiying the conditions
+    path_list = []
+    utility_list= []
+
+    ##intervals are = ['[-inf,-2]', '[-2.0,-1.5]', '[-1.5,-1.0]', '[-1.0,-0.5]', '[-0.5,0.0]', '[0.0,0.5]', '[0.5,1.0]', '[1.0,inf]']
+    for path in Path(searching_directory).glob("**/*json"):
+
+        if os.path.getsize(path) > 0 and str(path).__contains__("env_params"):
+            with open(path) as f:
+                log_dict = json.load(f)
+
+                ## boolean to check whether the given path satisfies the conditions
+                failed = False
+                for k in conditions:
+                    if k != "pmv":
+                        a = log_dict[k]
+                        comparator, b = conditions[k]
+                        if not (comparison(a, b, comparator=comparator)):
+                            failed = True
+                            break
+                    else:
+                        for k in conditions["pmv"]:
+                            a = log_dict["pmvs"][k]
+                        comparator, b = conditions["pmv"][k]
+                        if not (comparison(a, b, comparator=comparator)):
+                            failed = True
+                            break
+
+                if not (failed):
+                    path_list.append(path)
+
+                    ## checking whether top_k and function are defined
+                    ## which means that we do  want sorting
+                    if (top_k is not None) and (utility_function is not None):
+
+                        path_generator = Path(path.parent).glob('**/*_summary.csv')
+
+                        ## if no summary csv, then there was only one episode
+                        if len(list(path_generator)) == 0:
+                            path_generator = Path(path.parent).glob('**/*_1.csv')
+
+
+                        df = pd.read_csv([str(path) for path in path_generator][0])
+                        utility_list.append(utility_function(df))
+
+
+
+
+
+    path_list = np.array(path_list)
+    utility_list = np.array(utility_list)
+
+
+    if len(utility_list) > 0:
+        path_list = path_list[np.flip(np.argsort(utility_list))[:top_k]]
+
+
+    return path_list
+
+
+def comparison(a, b, comparator: str):
+    """ Simple utility function used by search_paths()"""
+    if comparator == "=":
+        return a == b
+    elif comparator == "<":
+        return a < b
+    elif comparator == ">":
+        return a > b
+    else:
+        print("Unsupported operation")
+        return False
+
+
+@staticmethod
+def all_combinations_list(arguments: Dict[str, List[Any]]) -> List[Dict[str, Any]]:
+    """Given a dictionary of type Dict[str, List[Any]], outputs a list of all the combinatorial combinations
+    (cartesian product) of the elements in the list. This is useful in the case of trying many different 
+    combinations of parameter for a reinforcement learning agent.
+
+    Example:
+    Given arguments: {"a":[1,2], "b":[3,4]}
+
+    Outputs: [{"a":1, "b":3}, {"a":1, "b":4}, {"a":2, "b":3}, {"a":2, "b":4}]
+    
+
+    Args:
+        arguments (Dict[str, List[Any]]): Dictionary containing key-value pairs where the key is a string 
+        and the value is a list of parameters.
+
+    Returns:
+        List[Dict[str,Any]]: Cartesian product of the elements.
+    """
+    parameter_space = []
+    argument_list = []
+
+    for param, values in arguments.items():
+        parameters = []
+        if not isinstance(values, list) and not isinstance(values, np.ndarray):
+            values = [values]
+
+        for value in values:
+            # Convert other sequences to tuple to make the parameter accesible to be used as a dictionary key
+            parameters.append(
+                Parameter(
+                    name=param, value=value if np.isscalar(value) else tuple(value)
+                )
+            )
+
+        parameter_space.append(parameters)
+
+    # unpacking and doing the cartesian product
+    for params in product(*parameter_space):
+        argument_list.append({param.name: param.value for param in params})
+
+    return argument_list
+
