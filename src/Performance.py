@@ -22,24 +22,33 @@ Parameter = namedtuple("Parameter", ["name", "value"])
 # IF NOT SENSITIVE, FINAL STEP IS TO EXAMINE BEHAVIOUR IN FIXED POLICY
 
 
-# ALREADY DEFINED UTILITY FUNCTIONS
-@staticmethod
+# UTILITY FUNCTIONS
+
+
 def cumulative_reward(data: pd.DataFrame) -> float:
-    return np.cumsum(np.array(data["Reward"]))[-1]
+    """ Given a dataframe containing a reward column, computes cumulative reward"""
+    if "Reward" in data.columns:
+        return np.cumsum(np.array(data["Reward"]))[-1]
+    else:
+        return np.cumsum(np.array(data["reward"]))[-1]
 
 
-@staticmethod
-def cumulative_heating(data: pd.DataFrame) -> float:
-    return np.cumsum(np.array(data["Heating"]))[-1]
+def negative_cumulative_heating(data: pd.DataFrame) -> float:
+    """ Given a dataframe containing a reward column, computes cumulative reward"""
+
+    if "Heating" in data.columns:
+        return -np.cumsum(np.array(data["Heating"]))[-1]
+    else:
+        return -np.cumsum(np.array(data["heating"]))[-1]
 
 
 # STATISTICS COMPUTATION
-@staticmethod
+
+
 def IQR(arr: np.ndarray) -> float:
     return np.quantile(arr, 0.75) - np.quantile(arr, 0.25)
 
 
-@staticmethod
 def CVaR(arr: np.ndarray, alpha: float = 0.05) -> float:
     VaR = np.quantile(arr, alpha)
     return arr[arr < VaR].mean()
@@ -48,7 +57,6 @@ def CVaR(arr: np.ndarray, alpha: float = 0.05) -> float:
 # ACROSS_TIME
 
 
-@staticmethod
 def compute_dispersion_across_time(
     data: pd.DataFrame, column: str, window: int
 ) -> float:
@@ -63,7 +71,6 @@ def compute_dispersion_across_time(
     return iqr
 
 
-@staticmethod
 def compute_risk_across_time(
     data: pd.DataFrame, column: str, alpha: float = 0.05
 ) -> float:
@@ -75,7 +82,6 @@ def compute_risk_across_time(
     return CVaR(np.array(row), alpha=alpha)
 
 
-@staticmethod
 def across_time(
     data: pd.DataFrame,
     utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
@@ -98,7 +104,6 @@ def across_time(
     return (utility, dispersion, risk)
 
 
-@staticmethod
 def across_runs(
     agent: Agent,
     agent_arguments: Dict[str, Any],
@@ -160,7 +165,8 @@ def across_runs(
 
 # agent arguments most proabably from agent.log_dict or extract them from the json using log_dict.keys()
 # same thing for env_arguments
-@staticmethod
+
+
 def across_fixed_policy(
     agent: Agent,
     num_testing: int,
@@ -208,7 +214,7 @@ def across_fixed_policy(
 
 # Example of how to use the function:
 
-# Can be found here: https://haroldbenoit.github.io/enac-docs/docs/technical-reference/utils
+# Can be found here: https://haroldbenoit.github.io/enac-docs/docs/technical-reference/performance
 
 # searching_directory = r"C:\Users\DIET_Controller"
 #
@@ -220,24 +226,42 @@ def across_fixed_policy(
 #  }
 #
 # ## This example is specific to SimpleEnvironment
-# ## One may define
+# ## One may also define
 #  conditions["pmv"] = {
 #          "[-inf,-2]": ["<",0.2], # less than 20% of the time spent in the [-inf,-2] pmv interval
 #          "[-0.5,0.0]": [">", 0.5] # more than 50% of the time spent in the [-0.5,0.0] pmv interval
 #  }
+# Possible intervals are = ['[-inf,-2]', '[-2.0,-1.5]', '[-1.5,-1.0]',
+#  '[-1.0,-0.5]', '[-0.5,0.0]', '[0.0,0.5]', '[0.5,1.0]', '[1.0,inf]']
 #
 # ## This will return the list of absolute paths of log folders satisfying the above conditions.
 #  path_list = search_paths(searching_directory,conditions)
 
 
-@staticmethod
-def search_paths(searching_directory, conditions, utility_function: Callable[[pd.DataFrame], float] = cumulative_reward, top_k=1):
+def search_paths(
+    searching_directory: str,
+    conditions: Dict[str, Any],
+    utility_function: Callable[[pd.DataFrame], float] = None,
+    top_k: int = None,
+) -> List[str]:
+    """ Finds all absolute paths in searching_directory of agent sessions that satisfy the specified condtions.
+        If utility_function and top_k are defined, outputs the top_k best paths according to the utility_function.
+
+    Args:
+        searching_directory (str): Absolute path of the relevant directory where the logs of interest may be found
+        conditions (Dict[str,Any]): Conditions that the session must satisfy. Further details on how to define them below.
+        utility_function (Callable[[pd.DataFrame], float], optional): Utility function to rank sessions. Defaults to None.
+        If None, no ranking is applied.
+        top_k (int, optional): Number of outputted paths. Defaults to None. If None, every path is outputted.
+
+    Returns:
+        List[str]: All the absolute paths of the sessions logs that satisfy the defined conditions.
+    """
 
     ## list of paths satisfiying the conditions
     path_list = []
-    utility_list= []
+    utility_list = []
 
-    ##intervals are = ['[-inf,-2]', '[-2.0,-1.5]', '[-1.5,-1.0]', '[-1.0,-0.5]', '[-0.5,0.0]', '[0.0,0.5]', '[0.5,1.0]', '[1.0,inf]']
     for path in Path(searching_directory).glob("**/*json"):
 
         if os.path.getsize(path) > 0 and str(path).__contains__("env_params"):
@@ -247,6 +271,7 @@ def search_paths(searching_directory, conditions, utility_function: Callable[[pd
                 ## boolean to check whether the given path satisfies the conditions
                 failed = False
                 for k in conditions:
+                    # pmv intervals are a different logic
                     if k != "pmv":
                         a = log_dict[k]
                         comparator, b = conditions[k]
@@ -254,46 +279,65 @@ def search_paths(searching_directory, conditions, utility_function: Callable[[pd
                             failed = True
                             break
                     else:
-                        for k in conditions["pmv"]:
-                            a = log_dict["pmvs"][k]
-                        comparator, b = conditions["pmv"][k]
-                        if not (comparison(a, b, comparator=comparator)):
-                            failed = True
-                            break
+                        # checking all specified intervals
+                        for interval in conditions["pmv"]:
+                            a = log_dict["pmvs"][interval]
+                            comparator, b = conditions["pmv"][interval]
+                            if not (comparison(a, b, comparator=comparator)):
+                                failed = True
+                                break
 
+                ## conditions are satisfied
                 if not (failed):
-                    path_list.append(path)
 
                     ## checking whether top_k and function are defined
-                    ## which means that we do  want sorting
+                    ## which means that we do want sorting
                     if (top_k is not None) and (utility_function is not None):
 
-                        path_generator = Path(path.parent).glob('**/*_summary.csv')
+                        # one has to be careful with generators because
+                        # they may be consumed only once, thus we
+                        # need to recreate them
 
-                        ## if no summary csv, then there was only one episode
-                        if len(list(path_generator)) == 0:
-                            path_generator = Path(path.parent).glob('**/*_1.csv')
+                        ## if no summary csv, possibly there was only one episode
+                        if len(list(Path(path.parent).glob("**/*_summary.csv"))) > 0:
+                            df = pd.read_csv(
+                                [
+                                    str(curr)
+                                    for curr in Path(path.parent).glob(
+                                        "**/*_summary.csv"
+                                    )
+                                ][0]
+                            )
+                            utility_list.append(utility_function(df))
+                            path_list.append(path)
+                        else:
+                            ## does the csv exist ?
+                            if len(list(Path(path.parent).glob("**/*_1.csv"))) > 0:
+                                df = pd.read_csv(
+                                    [
+                                        str(curr)
+                                        for curr in Path(path.parent).glob("**/*_1.csv")
+                                    ][0]
+                                )
+                                utility_list.append(utility_function(df))
+                                path_list.append(path)
 
-
-                        df = pd.read_csv([str(path) for path in path_generator][0])
-                        utility_list.append(utility_function(df))
-
-
-
-
+                    # no need to compute utility function and thus to check if csv exists
+                    else:
+                        path_list.append(path)
 
     path_list = np.array(path_list)
     utility_list = np.array(utility_list)
 
-
+    # if utility was defined, we sort by best one
     if len(utility_list) > 0:
+        print(np.flip(np.sort(utility_list)))
         path_list = path_list[np.flip(np.argsort(utility_list))[:top_k]]
 
+    return [str(path_name.parent) for path_name in path_list]
 
-    return path_list
 
-
-def comparison(a, b, comparator: str):
+def comparison(a, b, comparator: str) -> bool:
     """ Simple utility function used by search_paths()"""
     if comparator == "=":
         return a == b
@@ -306,7 +350,6 @@ def comparison(a, b, comparator: str):
         return False
 
 
-@staticmethod
 def all_combinations_list(arguments: Dict[str, List[Any]]) -> List[Dict[str, Any]]:
     """Given a dictionary of type Dict[str, List[Any]], outputs a list of all the combinatorial combinations
     (cartesian product) of the elements in the list. This is useful in the case of trying many different 
