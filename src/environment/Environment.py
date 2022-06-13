@@ -46,12 +46,28 @@ class Environment(metaclass=ABCMeta):
 
     @abstractmethod
     def reset(self) -> np.ndarray:
-        """ Method to reset the environment to its initial state. Should be called before calling step()"""
+        """ Method to reset the environment to its initial state. Should be called before calling step()
+
+        Returns:
+            np.ndarray: initial observation / state of the environment.
+        """
         pass
 
     @abstractmethod
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, dict]:
-        """ Given an action contained in the action space, apply it on the environment"""
+        """ Given an action contained in the action space, apply it on the environment.
+        
+
+        Args:
+            action (np.ndarray): Action to be applied on the environment
+
+        Returns:
+            Tuple[np.ndarray, float, bool, dict]: 
+            - np.ndarray = new observation / state of the environment after applying the action
+            - float = reward i.e. the amount of reward returned after taking this action
+            - bool = done i.e. whether we have reached the end of the simulation / environment
+            - dict = info i.e. any useful additional info 
+        """
         pass
 
     @abstractmethod

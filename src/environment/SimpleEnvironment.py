@@ -21,12 +21,12 @@ class SimpleEnvironment(Environment):
         # list of parameters to be fetched from the EnergyPlus simulation
         # defines the observation space
         param_list: List[str] = [
-            "Tair",
-            "RH",
-            "Tmrt",
-            "Tout",
-            "Qheat",
-            "Occ",
+            "Tair",  # air temperature
+            "RH",  # relative humidity
+            "Tmrt",  # mean radiant temperature
+            "Tout",  # External ambiant temperature
+            "Qheat",  # Heating demand from HVAC system
+            "Occ",  # Occupancy of the room
         ],  # what we get from the model at each step
         min_temp: int = 16,  # minimum temperature for action
         max_temp: int = 21,  # maximum temperature for action
@@ -158,7 +158,7 @@ class SimpleEnvironment(Environment):
 
         observation (np.ndarray): agent’s observation of the current environment. 
         This will be an element of self.observation_space, representing the HVAC environment dynamics.
-        reward (float) : Amount of reward returned after previous action.
+        reward (float) : Amount of reward returned as a result of taking the action.
         done (bool): Whether the simulation episode has ended, in which case further step() 
         calls will return undefined results. 
         info (dict): Contains auxiliary diagnostic information (helpful for debugging, learning, and logging). 
@@ -167,9 +167,6 @@ class SimpleEnvironment(Environment):
         # checking if environment has been reset
         if not (self.has_reset):
             raise InitializationError("Must reset the environment before using it")
-
-        pmv = self.comfPMV(self.curr_obs)
-        reward = self.compute_reward(self.curr_obs, self.alpha, self.beta)
 
         ## clipping in the correct range
         action = np.clip(action, self._min_temp, self._max_temp)
@@ -185,6 +182,11 @@ class SimpleEnvironment(Environment):
 
         ## getting the current observation from the EnergyPlus environment
         self.curr_obs = np.array(list(self.model.get(self.param_list)))
+
+        ## computing reward after taking action
+
+        pmv = self.comfPMV(self.curr_obs)
+        reward = self.compute_reward(self.curr_obs, self.alpha, self.beta)
 
         self.simtime += self.secondstep
 

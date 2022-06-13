@@ -42,6 +42,11 @@ def negative_cumulative_heating(data: pd.DataFrame) -> float:
         return -np.cumsum(np.array(data["heating"]))[-1]
 
 
+def constant_utility(data: pd.DataFrame) -> float:
+    """ Constant utility function, to be used when there is no preference between two sessions"""
+    return 1.0
+
+
 # STATISTICS COMPUTATION
 
 
@@ -241,18 +246,17 @@ def across_fixed_policy(
 def search_paths(
     searching_directory: str,
     conditions: Dict[str, Any],
-    utility_function: Callable[[pd.DataFrame], float] = None,
-    top_k: int = None,
+    utility_function: Callable[[pd.DataFrame], float] = constant_utility,
+    top_k: int = -1,
 ) -> List[str]:
-    """ Finds all absolute paths in searching_directory of agent sessions that satisfy the specified condtions.
-        If utility_function and top_k are defined, outputs the top_k best paths according to the utility_function.
-
+    """ Finds all absolute paths in searching_directory of agent sessions that satisfy the specified conditions.
+        Outputs top_k (all if -1) absolute paths ranked according to the utility function
     Args:
         searching_directory (str): Absolute path of the relevant directory where the logs of interest may be found
         conditions (Dict[str,Any]): Conditions that the session must satisfy. Further details on how to define them below.
-        utility_function (Callable[[pd.DataFrame], float], optional): Utility function to rank sessions. Defaults to None.
-        If None, no ranking is applied.
-        top_k (int, optional): Number of outputted paths. Defaults to None. If None, every path is outputted.
+        utility_function (Callable[[pd.DataFrame], float], optional): Utility function to rank sessions.
+        Defaults to constant_utility i.e. no ranking.
+        top_k (int, optional): Number of outputted paths. Defaults to 0. If -1, every path is outputted.
 
     Returns:
         List[str]: All the absolute paths of the sessions logs that satisfy the defined conditions.
@@ -290,49 +294,38 @@ def search_paths(
                 ## conditions are satisfied
                 if not (failed):
 
-                    ## checking whether top_k and function are defined
-                    ## which means that we do want sorting
-                    if (top_k is not None) and (utility_function is not None):
-
-                        # one has to be careful with generators because
-                        # they may be consumed only once, thus we
-                        # need to recreate them
-
-                        ## if no summary csv, possibly there was only one episode
-                        if len(list(Path(path.parent).glob("**/*_summary.csv"))) > 0:
+                    # one has to be careful with generators because
+                    # they may be consumed only once, thus we
+                    # need to recreate them
+                    ## if no summary csv, possibly there was only one episode
+                    if len(list(Path(path.parent).glob("**/*_summary.csv"))) > 0:
+                        df = pd.read_csv(
+                            [
+                                str(curr)
+                                for curr in Path(path.parent).glob("**/*_summary.csv")
+                            ][0]
+                        )
+                        utility_list.append(utility_function(df))
+                        path_list.append(path)
+                    else:
+                        ## does the csv exist ?
+                        if len(list(Path(path.parent).glob("**/*_1.csv"))) > 0:
                             df = pd.read_csv(
                                 [
                                     str(curr)
-                                    for curr in Path(path.parent).glob(
-                                        "**/*_summary.csv"
-                                    )
+                                    for curr in Path(path.parent).glob("**/*_1.csv")
                                 ][0]
                             )
                             utility_list.append(utility_function(df))
                             path_list.append(path)
-                        else:
-                            ## does the csv exist ?
-                            if len(list(Path(path.parent).glob("**/*_1.csv"))) > 0:
-                                df = pd.read_csv(
-                                    [
-                                        str(curr)
-                                        for curr in Path(path.parent).glob("**/*_1.csv")
-                                    ][0]
-                                )
-                                utility_list.append(utility_function(df))
-                                path_list.append(path)
-
-                    # no need to compute utility function and thus to check if csv exists
-                    else:
-                        path_list.append(path)
 
     path_list = np.array(path_list)
     utility_list = np.array(utility_list)
 
-    # if utility was defined, we sort by best one
-    if len(utility_list) > 0:
-        print(np.flip(np.sort(utility_list)))
+    if top_k != -1:
         path_list = path_list[np.flip(np.argsort(utility_list))[:top_k]]
+    else:
+        path_list = path_list[np.flip(np.argsort(utility_list))]
 
     return [str(path_name.parent) for path_name in path_list]
 
