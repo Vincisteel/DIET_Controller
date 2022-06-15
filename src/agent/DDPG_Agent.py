@@ -257,6 +257,7 @@ class DDPG_Agent(Agent):
         for episode_num in range(num_episodes):
 
             state = self.env.reset()
+            # need to chdir back to logging_path at each episode because calling env.reset() calls chdir() too
             os.chdir(logging_path)
 
             ## update the model when the replay buffer is filled

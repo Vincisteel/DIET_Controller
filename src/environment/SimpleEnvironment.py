@@ -32,8 +32,8 @@ class SimpleEnvironment(Environment):
         max_temp: int = 21,  # maximum temperature for action
         alpha: float = 1,  # thermal comfort
         beta: float = 1,  # energy consumption
-        modelname: str = "CELLS_v1.fmu",
-        # where the EnergyPlus FMU can be found
+        modelname: str = "CELLS_v1.fmu", # name of the fmu
+        # simulation_path is where the EnergyPlus FMU can be found
         simulation_path: str = r"C:\Users\Harold\Desktop\ENAC-Semester-Project\DIET_Controller\EnergyPlus_simulations\simple_simulation",
         # parameters to be found in the idf file
         days: int = 151,
@@ -55,7 +55,7 @@ class SimpleEnvironment(Environment):
 
         self.numsteps = (
             days * hours * ep_timestep
-        )  # total number of simulation steps during the simulationx
+        )  # total number of simulation steps during the simulation
 
         self.timestop = (
             days * hours * minutes * seconds
@@ -63,7 +63,7 @@ class SimpleEnvironment(Environment):
 
         self.secondstep = (
             self.timestop / self.numsteps
-        )  # length of a single step in seconds
+        )   
 
         self.simtime = 0  # keeps track of current time in the simulation
         self.model = None

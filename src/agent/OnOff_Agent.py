@@ -46,8 +46,10 @@ class OnOffAgent(Agent):
         d = self.env.observation_to_dict(state)
         occ = d["Occ"][0]
         if self.is_step:
+            # step function
             selected_action = self.env.min_temp if occ == 0.0 else self.env.max_temp
         else:
+            # linear function
             selected_action = self.env.min_temp + occ * (
                 self.env.max_temp - self.env.min_temp
             )
@@ -94,7 +96,6 @@ class OnOffAgent(Agent):
             num_iterations=num_iterations,
         )
 
-        # plotting options (make sure the dictionary is in the same order as the columns of the outputted summary_df)
         self.opts = {
             "Tair": {"secondary_y": None, "range": [10, 24], "unit": "(°C)",},
             "Tset": {
@@ -120,7 +121,7 @@ class OnOffAgent(Agent):
         for episode_num in range(num_episodes):
 
             state = self.env.reset()
-            ## chdir back to logging path otherwise then we recall train() mutliple times, the  os.getcwd() will have moved
+            # need to chdir back to logging_path at each episode because calling env.reset() calls chdir() too
             os.chdir(logging_path)
 
             for i in range(num_iterations):

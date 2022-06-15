@@ -104,8 +104,8 @@ class SimpleLogger(Logger):
             vertical_spacing=0.02,
             # specifiying which part of the plot will contain an auxiliary plot
             specs=[
-                [{"secondary_y": (res["secondary_y"] is not None)}]
-                for res in opts.values()
+                [{"secondary_y": (opts[column_name]["secondary_y"] is not None)}]
+                for column_name in summary_df.columns
             ],
         )
 
@@ -333,5 +333,4 @@ class SimpleLogger(Logger):
         )
 
         return
-
 

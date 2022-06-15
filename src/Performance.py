@@ -248,6 +248,7 @@ def search_paths(
     conditions: Dict[str, Any],
     utility_function: Callable[[pd.DataFrame], float] = constant_utility,
     top_k: int = -1,
+    normalized: bool = False,
 ) -> List[str]:
     """ Finds all absolute paths in searching_directory of agent sessions that satisfy the specified conditions.
         Outputs top_k (all if -1) absolute paths ranked according to the utility function
@@ -257,6 +258,8 @@ def search_paths(
         utility_function (Callable[[pd.DataFrame], float], optional): Utility function to rank sessions.
         Defaults to constant_utility i.e. no ranking.
         top_k (int, optional): Number of outputted paths. Defaults to 0. If -1, every path is outputted.
+        normalized (bool, optional): If True, then the utility function output is divided (i.e. "normalized) by the number of episodes 
+        of the session. Defaults to False. If False, does nothing.
 
     Returns:
         List[str]: All the absolute paths of the sessions logs that satisfy the defined conditions.
@@ -294,6 +297,7 @@ def search_paths(
                 ## conditions are satisfied
                 if not (failed):
 
+                    df = pd.DataFrame({})
                     # one has to be careful with generators because
                     # they may be consumed only once, thus we
                     # need to recreate them
@@ -316,8 +320,10 @@ def search_paths(
                                     for curr in Path(path.parent).glob("**/*_1.csv")
                                 ][0]
                             )
-                            utility_list.append(utility_function(df))
-                            path_list.append(path)
+                    res = utility_function(df)
+                    res = res if not (normalized) else res / log_dict["num_episodes"]
+                    utility_list.append(res)
+                    path_list.append(path)
 
     path_list = np.array(path_list)
     utility_list = np.array(utility_list)

@@ -145,7 +145,6 @@ class DQNAgent(Agent):
 
         self.epsilon = self.max_epsilon
 
-
         self.seed_agent(self.seed)
 
         self.replay_buffer = ReplayBuffer(
@@ -244,7 +243,6 @@ class DQNAgent(Agent):
             num_iterations=num_iterations,
         )
 
-        # plotting options (make sure the dictionary is in the same order as the columns of the created summary_df below)
         self.opts = {
             "Tair": {"secondary_y": None, "range": [10, 24], "unit": "(°C)",},
             "Tset": {
@@ -274,7 +272,7 @@ class DQNAgent(Agent):
         for episode_num in range(num_episodes):
 
             state = self.env.reset()
-            ## chdir back to logging path otherwise then we recall train() mutliple times, the  os.getcwd() will have moved
+            # need to chdir back to logging_path at each episode because calling env.reset() calls chdir() too
             os.chdir(logging_path)
 
             ## to keep track of number of updates and update target network accordingly
@@ -290,6 +288,7 @@ class DQNAgent(Agent):
 
                 ## keeping track of the value we've seen
                 rewards.append(reward)
+                ## because our actions are discrete values
                 actions.append(self.env.action_to_temp[action])
                 pmv.append(info["pmv"][0])
                 d = self.env.observation_to_dict(next_state)
@@ -299,10 +298,6 @@ class DQNAgent(Agent):
                 occ.append(d["Occ"][0])
 
                 state = next_state
-
-                # if episode ends
-                # if done:
-                #    state = self.env.reset()
 
                 # if training is ready
                 if not (self.is_test) and (len(self.replay_buffer) >= self.batch_size):
@@ -431,6 +426,7 @@ class DQNAgent(Agent):
 
         return
 
+    # DQN specific
     def update_model(self) -> torch.Tensor:
         """Update the model by gradient descent."""
         samples = self.replay_buffer.sample_batch()
@@ -443,6 +439,7 @@ class DQNAgent(Agent):
 
         return loss.item()
 
+    # DQN specific
     def _compute_dqn_loss(self, samples: Dict[str, np.ndarray]) -> torch.Tensor:
         """Return dqn loss."""
         device = self.device  # for shortening the following lines
@@ -465,9 +462,13 @@ class DQNAgent(Agent):
 
         return loss
 
+    # DQN Specific
     def _target_hard_update(self):
         """Hard update: target <- local."""
         self.dqn_target.load_state_dict(self.dqn.state_dict())
+
+
+# Helper classes
 
 
 class ReplayBuffer:
