@@ -387,6 +387,8 @@ def all_combinations_list(arguments: Dict[str, List[Any]]) -> List[Dict[str, Any
 
 
 
+
+
 def search_similar(searching_directory: str, subset_log_dict:Dict[str,Any]) -> bool:
 
     for path in Path(searching_directory).glob("**/*json"):
@@ -401,3 +403,37 @@ def search_similar(searching_directory: str, subset_log_dict:Dict[str,Any]) -> b
                     return True
 
     return False
+
+def open_json_params(results_path:str)->Dict[str,Any]:
+    log_dict={}
+    for path in Path(results_path).glob("**/*json"):
+        if os.path.getsize(path) > 0 and str(path).__contains__("env_params"):
+            with open(path) as f:
+                log_dict=json.load(f)
+
+    return log_dict
+
+def load_trained_agent(agent:Agent, results_path:str) -> Agent:
+
+    agent_log_dict = agent.log_dict()
+
+    results_log_dict = open_json_params(results_path)
+
+    new_params = {k:results_log_dict[k] for k in agent_log_dict if k in results_log_dict}
+
+    agent = agent.reset().from_dict(new_params).reset()
+
+
+    if len(list(Path(results_path).glob("**/torch_ep_summary*.pth"))) > 0:
+        for path in Path(results_path).glob("**/torch_ep_summary*.pth"):
+            agent.load(directory=str(path.parent), filename="torch_ep_summary")
+
+            return agent
+
+    elif  len(list(Path(results_path).glob("**/torch_ep_1*.pth"))) > 0:
+            for path in Path(results_path).glob("**/torch_ep_1*.pth"):
+                agent.load(directory=str(path.parent), filename="torch_ep_1")
+                return agent
+
+    else:
+        return None

@@ -199,7 +199,7 @@ class SimpleEnvironment(Environment):
 
         return next_state, reward, done, info
 
-    def log_dict(self):
+    def log_dict(self) -> Dict[str,Any]:
         """We refer to the Environment class docstring."""
 
         log_dict = {

@@ -181,7 +181,6 @@ class DQNAgent(Agent):
 
     def save(self, filename, directory):
         """We refer to the Agent class docstring."""
-
         torch.save(self.dqn.state_dict(), "%s/%s_dqn.pth" % (directory, filename))
         torch.save(
             self.dqn_target.state_dict(), "%s/%s_dqn_target.pth" % (directory, filename)
@@ -189,7 +188,8 @@ class DQNAgent(Agent):
 
     def load(self, filename, directory):
         """We refer to the Agent class docstring."""
-        self.dqn.load_state_dict(torch.load("%s/%s_dqn.pth" % (directory, filename)))
+        state_dict = torch.load("%s/%s_dqn.pth" % (directory, filename))
+        self.dqn.load_state_dict(state_dict)
         self.dqn_target.load_state_dict(
             torch.load("%s/%s_dqn_target.pth" % (directory, filename))
         )
@@ -362,6 +362,7 @@ class DQNAgent(Agent):
                     opts=self.opts,
                 )
 
+           
         # Summary that contatenates all episodes together for a complete overview of the training
 
         ## As above, extend the length of the loss array such that it is of correct size for plotting
@@ -393,6 +394,11 @@ class DQNAgent(Agent):
                 is_summary=True,
                 opts=self.opts,
             )
+
+            #self.save(
+            #directory=f"{logger.RESULT_PATH}/model_weights", filename=f"torch_ep_summary")
+
+
 
         results_path = logger.RESULT_PATH
 
