@@ -385,3 +385,19 @@ def all_combinations_list(arguments: Dict[str, List[Any]]) -> List[Dict[str, Any
 
     return argument_list
 
+
+
+def search_similar(searching_directory: str, subset_log_dict:Dict[str,Any]) -> bool:
+
+    for path in Path(searching_directory).glob("**/*json"):
+        if os.path.getsize(path) > 0 and str(path).__contains__("env_params"):
+            with open(path) as f:
+                curr_log_dict = json.load(f)
+                ## counting the number of key-values equalities
+                num_similar = [1 for k in subset_log_dict if (k in curr_log_dict)  and (subset_log_dict[k] == curr_log_dict[k])]
+                
+                # subset_log_dict is a subset of curr_log_dict
+                if len(num_similar) == len(subset_log_dict):
+                    return True
+
+    return False
