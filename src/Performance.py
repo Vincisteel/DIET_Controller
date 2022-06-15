@@ -90,8 +90,8 @@ def compute_risk_across_time(
 def across_time(
     data: pd.DataFrame,
     utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
-    window: int = 1000,
-    column: str = "action",
+    window: int = 24 * 6,
+    column: str = "Tset",
     alpha: float = 0.05,
 ) -> Tuple[float, float, float]:
 
@@ -109,6 +109,7 @@ def across_time(
     return (utility, dispersion, risk)
 
 
+# measuring how much the "optimal" parameters are sensible to stochasticity in the training progress
 def across_runs(
     agent: Agent,
     agent_arguments: Dict[str, Any],
@@ -168,10 +169,6 @@ def across_runs(
     return (iqr, cvar, results_dict)
 
 
-# agent arguments most proabably from agent.log_dict or extract them from the json using log_dict.keys()
-# same thing for env_arguments
-
-
 def across_fixed_policy(
     agent: Agent,
     num_testing: int,
@@ -184,7 +181,7 @@ def across_fixed_policy(
     # list to store utility for each run
     utilities_results = []
 
-    for i in range(num_testing):
+    for _ in range(num_testing):
 
         _, summary_df = agent.test(
             logging_path=logging_path,
@@ -217,10 +214,7 @@ def across_fixed_policy(
     # same idea for the agent, load everything from the json,  and put him in test mode, i guess
 
 
-# Example of how to use the function:
-
-# Can be found here: https://haroldbenoit.github.io/enac-docs/docs/technical-reference/performance
-
+# Example of how to use search_paths:
 # searching_directory = r"C:\Users\DIET_Controller"
 #
 #  conditions={
