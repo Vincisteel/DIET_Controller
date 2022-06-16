@@ -250,10 +250,10 @@ class SimpleLogger(Logger):
         log_dict["num_episodes"] = self.num_episodes
         log_dict["num_iterations"] = self.num_iterations
 
-        log_dict["final_reward"] = np.array(summary_df["Reward"]).cumsum()[-1]
-        log_dict["final_cumulative_heating"] = np.array(summary_df["Heating"]).cumsum()[
-            -1
-        ]
+        #log_dict["final_reward"] = np.array(summary_df["Reward"]).cumsum()[-1]
+        #log_dict["final_cumulative_heating"] = np.array(summary_df["Heating"]).cumsum()[
+        #    -1
+        #]
 
         ## logging pmv percentages
         pmv_df = self.pmv_percentages(np.array(summary_df["PMV"])).to_dict()
