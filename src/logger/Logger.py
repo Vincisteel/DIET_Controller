@@ -48,18 +48,20 @@ class Logger(metaclass=ABCMeta):
 
         ...
 
-    def log_performance_pipeline(self, results: Dict[str, Any]):
+    def log_performance_pipeline(self, results: Dict[str, Any], fixed_policy:bool):
         """Logging method to be used by the performance assessment pipeline
 
         Args:
             results (Dict[str, Any]): Dictionary of relevant data to be logged
+            fixed_policy(bool): Whether we're logging "across_runs" or "fixed_policy"
         """
 
-        os.makedirs(self.PERFORMANCE_PATH, exist_ok=True)
+        suffix= "fixed_policy" if fixed_policy else "across_runs"
+        os.makedirs(f"{self.PERFORMANCE_PATH}\{suffix}", exist_ok=True)
 
         filename = f"performance_results_{self.time}"
 
-        with open(f"{self.PERFORMANCE_PATH}\{filename}", "w") as f:
+        with open(f"{self.PERFORMANCE_PATH}\{suffix}\{filename}", "w") as f:
             f.write(json.dumps(results, indent=True))
 
     @staticmethod

@@ -16,15 +16,7 @@ import pandas as pd
 Parameter = namedtuple("Parameter", ["name", "value"])
 
 
-# THE IDEA IS TO FIRST FIND THE BEST CONTROLLER USING ACROSS_TIME
-# THEN GIVEN THE FIXED BEST CONFIGURATION, EXAMINE ITS SENSITIVITY TO HYPERPARAMETERS
-# IF SENSITIVE, MAYBE START OVER TO FIND POSSIBLY BETTER CONFIGURATION
-# IF NOT SENSITIVE, FINAL STEP IS TO EXAMINE BEHAVIOUR IN FIXED POLICY
-
-
 # UTILITY FUNCTIONS
-
-
 def cumulative_reward(data: pd.DataFrame) -> float:
     """ Given a dataframe containing a reward column, computes cumulative reward"""
     if "Reward" in data.columns:
@@ -51,27 +43,23 @@ def constant_utility(data: pd.DataFrame) -> float:
 
 
 def IQR(arr: np.ndarray) -> float:
+    """ Computes the inter-quartile range of an array"""
     return np.quantile(arr, 0.75) - np.quantile(arr, 0.25)
 
 
 def CVaR(arr: np.ndarray, alpha: float = 0.05) -> float:
+    """ Computes the conditional value at risk of an array with risk threshold alpha"""
     VaR = np.quantile(arr, alpha)
     return arr[arr < VaR].mean()
 
 
 # ACROSS_TIME
 
-
 def compute_dispersion_across_time(
     data: pd.DataFrame, column: str, window: int
 ) -> float:
-
-    # First detrend to remove any long-running variation that would add noise to our measure
-    row = data[column] - data[column].shift(1)
-    row[0] = 0.0
-
     # Compute rolling inter-quartile range and then take the mean
-    iqr = row.rolling(window=window).aggregate(lambda x: IQR(np.array(x))).mean()
+    iqr = data[column].rolling(window=window).aggregate(lambda x: IQR(np.array(x))).mean()
 
     return iqr
 
@@ -105,8 +93,8 @@ def across_time(
 # measuring how much the "optimal" parameters are sensible to stochasticity in the training progress
 def across_runs(
     agent: Agent,
+    agent_config_path:str, #absolute path to the logging of the agent such that its configuration can be loaded
     parameter: Tuple[str, List[Any]],
-    logging_path: str,
     num_episodes: int,
     num_iterations: int = None,
     column_names:List[str] = ["Tset"], # list of the columns in summary df on which we wish to measure risk and dispersion
@@ -115,19 +103,14 @@ def across_runs(
     alpha=0.05,
 ):
 
-    # given a set of environment parameters and agent parameters
-    # given the set of parameters to vary
-    # train the agent for at least 2 episodes in each setting
-
-    # 2. run across_time on each run and then process their IQR and CVaR (this !)
+    agent = load_trained_agent(agent,agent_config_path).reset()
 
     parameter_name, parameter_list = parameter
 
     # list to store utility for each run
     utilities_results = []
-    # list to store each result path of each run to be logged later
-    results_path_list = []
 
+    # dictionary for results for each column
     column_names_results_dict = {}
 
     for name in column_names:
@@ -141,13 +124,12 @@ def across_runs(
         curr_agent: Agent = agent.from_dict({parameter_name:parameter_value})
 
         results_path, summary_df = curr_agent.train(
-            logging_path=logging_path,
+            logging_path="",
             num_episodes=num_episodes,
             num_iterations=num_iterations,
-            log=True,
+            log=False,
         )
         utilities_results.append(utility_function(summary_df))
-        results_path_list.append(results_path)
 
         # now computing across_time risk and dispersion for each column
         for name in column_names:
@@ -161,11 +143,12 @@ def across_runs(
     risk = CVaR(utilities_results, alpha=alpha)
 
     results_dict = {
+        "performance_test":"across_runs",
+        "agent_config_path": agent_config_path,
         "parameter_name": parameter_name,
         "parameter_list": parameter_list,
         "utility_function": utility_function.__name__,
         "utilities_results": utilities_results.tolist(),
-        "results_path_list": results_path_list,
         "utility_dispersion":dispersion,
         "utility_risk": risk,
         "column_names": column_names,
@@ -180,30 +163,63 @@ def across_runs(
 
 def across_fixed_policy(
     agent: Agent,
+    agent_config_path:str, #absolute path to the logging of the agent such that its configuration can be loaded
     num_testing: int,
-    logging_path: str,
     num_episodes: int,
+    num_iterations:int = None,
+    column_names:List[str] = ["Tset"], # list of the columns in summary df on which we wish to measure risk and dispersion
     utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
+    window:int = 3*6, # window to compute iqr and cvar across time
     alpha=0.05,
 ) -> Tuple[float, float]:
 
+    agent = load_trained_agent(agent,agent_config_path)
+
     # list to store utility for each run
     utilities_results = []
+    column_names_results_dict = {}
+
+    for name in column_names:
+        column_names_results_dict[f"{name}_dispersion"] = []
+        column_names_results_dict[f"{name}_risk"] = []
+
 
     for _ in range(num_testing):
 
-        _, summary_df = agent.test(
-            logging_path=logging_path,
+        results_path, summary_df = agent.test(
+            logging_path="",
             num_episodes=num_episodes,
-            num_iterations=None,
-            log=True,
+            num_iterations=num_iterations,
+            log=False,
         )
-
         utilities_results.append(utility_function(summary_df))
+
+        # now computing across_time risk and dispersion for each column
+        for name in column_names:
+            dispersion, risk = across_time(data=summary_df, window=window,column=name,alpha=alpha)
+            column_names_results_dict[f"{name}_dispersion"].append(dispersion)
+            column_names_results_dict[f"{name}_risk"].append(risk)
 
     utilities_results = np.array(utilities_results)
 
-    return (IQR(utilities_results), CVaR(utilities_results, alpha=alpha))
+    dispersion = IQR(utilities_results)
+    risk = CVaR(utilities_results, alpha=alpha)
+
+    results_dict = {
+        "performance_test":"fixed_policy",
+        "agent_config_path": agent_config_path,
+        "utility_function": utility_function.__name__,
+        "utilities_results": utilities_results.tolist(),
+        "utility_dispersion":dispersion,
+        "utility_risk": risk,
+        "column_names": column_names,
+    }
+
+    for name in column_names:
+        results_dict[f"{name}_dispersion"] = column_names_results_dict[f"{name}_dispersion"]
+        results_dict[f"{name}_risk"] = column_names_results_dict[f"{name}_risk"]
+
+    return results_dict
 
     # MAKE SURE THAT THE DATAFRAMES WE ARE GIVEN WERE FILTERED ON OCCUPANCY FIRST
 

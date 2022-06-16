@@ -1,0 +1,39 @@
+{
+ "parameter_name": "seed",
+ "parameter_list": [
+  775,
+  776,
+  777,
+  778
+ ],
+ "utility_function": "cumulative_reward",
+ "utilities_results": [
+  47927.40374383363,
+  47879.74171973753,
+  47985.906452124145,
+  47891.92508692903
+ ],
+ "results_path_list": [
+  "C:\\Users\\hbenoit\\Desktop\\DIET_Controller\\logs\\simple_simulation/DQN_Agent/results/2022_6_16/results_2022_6_16_11_15",
+  "C:\\Users\\hbenoit\\Desktop\\DIET_Controller\\logs\\simple_simulation/DQN_Agent/results/2022_6_16/results_2022_6_16_11_16",
+  "C:\\Users\\hbenoit\\Desktop\\DIET_Controller\\logs\\simple_simulation/DQN_Agent/results/2022_6_16/results_2022_6_16_11_17",
+  "C:\\Users\\hbenoit\\Desktop\\DIET_Controller\\logs\\simple_simulation/DQN_Agent/results/2022_6_16/results_2022_6_16_11_18"
+ ],
+ "utility_dispersion": 53.150175775095704,
+ "utility_risk": 47879.74171973753,
+ "column_names": [
+  "Tset"
+ ],
+ "Tset_dispersion": [
+  0.8144364906919254,
+  0.7887157559352819,
+  0.7805415499337884,
+  0.785452231128659
+ ],
+ "Tset_risk": [
+  16.51194957668066,
+  16.51133954044259,
+  16.511776475976955,
+  16.512320536152757
+ ]
+}

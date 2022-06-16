@@ -236,12 +236,13 @@ class DQNAgent(Agent):
             num_iterations = self.env.numsteps
 
         ## instantiate logger
-        logger = SimpleLogger(
-            logging_path=logging_path,
-            agent_name="DQN_Agent",
-            num_episodes=num_episodes,
-            num_iterations=num_iterations,
-        )
+        if log:
+            logger = SimpleLogger(
+                logging_path=logging_path,
+                agent_name="DQN_Agent",
+                num_episodes=num_episodes,
+                num_iterations=num_iterations,
+            )
 
         self.opts = {
             "Tair": {"secondary_y": None, "range": [10, 24], "unit": "(°C)",},
@@ -273,7 +274,8 @@ class DQNAgent(Agent):
 
             state = self.env.reset()
             # need to chdir back to logging_path at each episode because calling env.reset() calls chdir() too
-            os.chdir(logging_path)
+            if log:
+                os.chdir(logging_path)
 
             ## to keep track of number of updates and update target network accordingly
             update_cnt = 0
@@ -328,28 +330,30 @@ class DQNAgent(Agent):
             # epsilons and losses have different length since they only start to fill up when
             # the replay buffer is full (i.e. we can train) thus we must pad/extend the length.
             # this is because plotting requires same length lists.
+            if not(self.is_test):
+                len_difference = len(tair) - len(epsilons)
+                pad_epsilon = [epsilons[0] for i in range(len_difference)]
+                epsilons = pad_epsilon + epsilons
 
-            len_difference = len(tair) - len(epsilons)
-            pad_epsilon = [epsilons[0] for i in range(len_difference)]
-            epsilons = pad_epsilon + epsilons
+                temp_losses = [loss for loss in losses for _ in range(self.actor_update)]
+                len_difference = len(tair) - len(temp_losses)
+                pad_losses = [0 for i in range(len_difference)]
+                temp_losses = pad_losses + temp_losses
 
-            temp_losses = [loss for loss in losses for _ in range(self.actor_update)]
-            len_difference = len(tair) - len(temp_losses)
-            pad_losses = [0 for i in range(len_difference)]
-            temp_losses = pad_losses + temp_losses
-
-            summary_df = pd.DataFrame(
-                {
+            columns={
                     "Tair": tair[lower:upper],
                     "Tset": actions[lower:upper],
                     "PMV": pmv[lower:upper],
                     "Heating": qheat[lower:upper],
                     "Reward": rewards[lower:upper],
                     "Occ": occ[lower:upper],
-                    "Loss": temp_losses[lower:upper],
-                    "Epsilon": epsilons[lower:upper],
                 }
-            )
+
+            if not(self.is_test):
+                columns["Loss"] = temp_losses[lower:upper]
+                columns["Epsilon"]= epsilons[lower:upper]
+
+            summary_df = pd.DataFrame(columns)
 
             summary_df["Reward"] = summary_df["Reward"].apply(lambda x: float(x[0]))
 
@@ -366,23 +370,27 @@ class DQNAgent(Agent):
         # Summary that contatenates all episodes together for a complete overview of the training
 
         ## As above, extend the length of the loss array such that it is of correct size for plotting
-        temp_losses = [loss for loss in losses for _ in range(self.actor_update)]
-        len_difference = len(tair) - len(temp_losses)
-        pad_losses = [0 for i in range(len_difference)]
-        temp_losses = pad_losses + temp_losses
+        if not(self.is_test):
+            temp_losses = [loss for loss in losses for _ in range(self.actor_update)]
+            len_difference = len(tair) - len(temp_losses)
+            pad_losses = [0 for i in range(len_difference)]
+            temp_losses = pad_losses + temp_losses
 
-        summary_df = pd.DataFrame(
-            {
+        columns={
                 "Tair": tair,
                 "Tset": actions,
                 "PMV": pmv,
                 "Heating": qheat,
                 "Reward": rewards,
                 "Occ": occ,
-                "Loss": temp_losses,
-                "Epsilon": epsilons,
             }
-        )
+
+        if not(self.is_test):
+            columns["Loss"] = temp_losses
+            columns["Epsilon"]= epsilons
+
+            
+        summary_df = pd.DataFrame(columns)
 
         summary_df["Reward"] = summary_df["Reward"].apply(lambda x: float(x[0]))
 
@@ -400,7 +408,7 @@ class DQNAgent(Agent):
 
 
 
-        results_path = logger.RESULT_PATH
+        results_path = logger.RESULT_PATH if log else ""
 
         return (results_path, summary_df)
 

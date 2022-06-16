@@ -1,0 +1,25 @@
+{
+ "performance_test": "fixed_policy",
+ "agent_config_path": "C:\\Users\\hbenoit\\Desktop\\DIET_Controller\\logs\\simple_simulation\\DQN_Agent\\results\\2022_6_15\\results_2022_6_15_19_4",
+ "utility_function": "cumulative_reward",
+ "utilities_results": [
+  46379.56797881838,
+  46379.56797881838,
+  46379.56797881838
+ ],
+ "utility_dispersion": 0.0,
+ "utility_risk": NaN,
+ "column_names": [
+  "Tset"
+ ],
+ "Tset_dispersion": [
+  2.81991605224335,
+  2.81991605224335,
+  2.81991605224335
+ ],
+ "Tset_risk": [
+  16.10256919050184,
+  16.10256919050184,
+  16.10256919050184
+ ]
+}
