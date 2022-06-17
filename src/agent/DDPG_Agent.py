@@ -238,12 +238,13 @@ class DDPG_Agent(Agent):
             )
             num_iterations = self.env.numsteps
 
-        logger = SimpleLogger(
-            logging_path=logging_path,
-            agent_name="DDPG_Agent",
-            num_episodes=num_episodes,
-            num_iterations=num_iterations,
-        )
+        if log:
+            logger = SimpleLogger(
+                logging_path=logging_path,
+                agent_name="DDPG_Agent",
+                num_episodes=num_episodes,
+                num_iterations=num_iterations,
+            )
 
         summary_df: pd.DataFrame = pd.DataFrame()
 
@@ -258,7 +259,8 @@ class DDPG_Agent(Agent):
 
             state = self.env.reset()
             # need to chdir back to logging_path at each episode because calling env.reset() calls chdir() too
-            os.chdir(logging_path)
+            if log:
+                os.chdir(logging_path)
 
             ## update the model when the replay buffer is filled
             num_rand = 0 if self.is_test else self.num_random_episodes
@@ -347,7 +349,7 @@ class DDPG_Agent(Agent):
 
         # self.env.close()
 
-        results_path = logger.RESULT_PATH
+        results_path = logger.RESULT_PATH if log else ""
 
         return (results_path, summary_df)
 

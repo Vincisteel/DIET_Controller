@@ -32,10 +32,10 @@ class SimpleLogger(Logger):
         ## Setting up important absolute path attributes
         self.TIME_PATH = f"{str(date.year)}_{str(date.month)}_{str(date.day)}"
         self._RESULT_PATH = (
-            f"{logging_path}/results/{agent_name}/{self.TIME_PATH}/results_{self.time}"
+            f"{logging_path}/{agent_name}/results/{self.TIME_PATH}/results_{self.time}"
         )
         self._PERFORMANCE_PATH = (
-            f"{logging_path}/results/{agent_name}/performance_results"
+            f"{logging_path}/{agent_name}/performance_results"
         )
 
         ## Creating directories where the logging will be done
@@ -250,10 +250,10 @@ class SimpleLogger(Logger):
         log_dict["num_episodes"] = self.num_episodes
         log_dict["num_iterations"] = self.num_iterations
 
-        log_dict["final_reward"] = np.array(summary_df["Reward"]).cumsum()[-1]
-        log_dict["final_cumulative_heating"] = np.array(summary_df["Heating"]).cumsum()[
-            -1
-        ]
+        #log_dict["final_reward"] = np.array(summary_df["Reward"]).cumsum()[-1]
+        #log_dict["final_cumulative_heating"] = np.array(summary_df["Heating"]).cumsum()[
+        #    -1
+        #]
 
         ## logging pmv percentages
         pmv_df = self.pmv_percentages(np.array(summary_df["PMV"])).to_dict()

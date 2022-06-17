@@ -2,3 +2,5 @@
 .vscode/
 **/__pycache__
 **/Output_EPExport_Slave
+**/logs
+!logs/*.txt

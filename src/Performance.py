@@ -16,15 +16,7 @@ import pandas as pd
 Parameter = namedtuple("Parameter", ["name", "value"])
 
 
-# THE IDEA IS TO FIRST FIND THE BEST CONTROLLER USING ACROSS_TIME
-# THEN GIVEN THE FIXED BEST CONFIGURATION, EXAMINE ITS SENSITIVITY TO HYPERPARAMETERS
-# IF SENSITIVE, MAYBE START OVER TO FIND POSSIBLY BETTER CONFIGURATION
-# IF NOT SENSITIVE, FINAL STEP IS TO EXAMINE BEHAVIOUR IN FIXED POLICY
-
-
 # UTILITY FUNCTIONS
-
-
 def cumulative_reward(data: pd.DataFrame) -> float:
     """ Given a dataframe containing a reward column, computes cumulative reward"""
     if "Reward" in data.columns:
@@ -51,27 +43,23 @@ def constant_utility(data: pd.DataFrame) -> float:
 
 
 def IQR(arr: np.ndarray) -> float:
+    """ Computes the inter-quartile range of an array"""
     return np.quantile(arr, 0.75) - np.quantile(arr, 0.25)
 
 
 def CVaR(arr: np.ndarray, alpha: float = 0.05) -> float:
+    """ Computes the conditional value at risk of an array with risk threshold alpha"""
     VaR = np.quantile(arr, alpha)
     return arr[arr < VaR].mean()
 
 
 # ACROSS_TIME
 
-
 def compute_dispersion_across_time(
     data: pd.DataFrame, column: str, window: int
 ) -> float:
-
-    # First detrend to remove any long-running variation that would add noise to our measure
-    row = data[column] - data[column].shift(1)
-    row[0] = 0.0
-
     # Compute rolling inter-quartile range and then take the mean
-    iqr = row.rolling(window=window).aggregate(lambda x: IQR(np.array(x))).mean()
+    iqr = data[column].rolling(window=window).aggregate(lambda x: IQR(np.array(x))).mean()
 
     return iqr
 
@@ -80,22 +68,15 @@ def compute_risk_across_time(
     data: pd.DataFrame, column: str, alpha: float = 0.05
 ) -> float:
 
-    # First detrend to remove any long-running variation that would add noise to our measure
-    row = data[column] - data[column].shift(1)
-    row[0] = 0.0
-
-    return CVaR(np.array(row), alpha=alpha)
+    return CVaR(np.array(data[column]), alpha=alpha)
 
 
 def across_time(
     data: pd.DataFrame,
-    utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
-    window: int = 24 * 6,
+    window: int = 3 * 6,
     column: str = "Tset",
     alpha: float = 0.05,
 ) -> Tuple[float, float, float]:
-
-    utility = utility_function(data)
 
     # compute dispersion and risk over a sliding window of time (e.g. window = 1 day)
     # WHY USING A WINDOW ?
@@ -106,95 +87,139 @@ def across_time(
     dispersion = compute_dispersion_across_time(data, column, window)
     risk = compute_risk_across_time(data, column, alpha=alpha)
 
-    return (utility, dispersion, risk)
+    return (dispersion, risk)
 
 
 # measuring how much the "optimal" parameters are sensible to stochasticity in the training progress
 def across_runs(
     agent: Agent,
-    agent_arguments: Dict[str, Any],
+    agent_config_path:str, #absolute path to the logging of the agent such that its configuration can be loaded
     parameter: Tuple[str, List[Any]],
-    logging_path: str,
     num_episodes: int,
-    num_iterations: int,
+    num_iterations: int = None,
+    column_names:List[str] = ["Tset"], # list of the columns in summary df on which we wish to measure risk and dispersion
     utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
+    window:int = 3*6, # window to compute iqr and cvar across time
     alpha=0.05,
 ):
 
-    # given a set of environment parameters and agent parameters
-    # given the set of parameters to vary
-    # train the agent for at least 2 episodes in each setting
+    agent = load_trained_agent(agent,agent_config_path).reset()
 
-    # 1.risk and dispersion = take the utility of each run and compute IQR and CVaR on it
-    # OR
-    # 2. run across_time on each run and then process their IQR and CVaR
-
-    # setting up the paramter grid to be used by all_combinations_list
     parameter_name, parameter_list = parameter
-    agent_arguments[parameter_name] = parameter_list
 
     # list to store utility for each run
     utilities_results = []
-    # list to store each result path of each run to be logged later
-    results_path_list = []
 
-    for curr_agent_arguments in all_combinations_list(agent_arguments):
+    # dictionary for results for each column
+    column_names_results_dict = {}
+
+    for name in column_names:
+        column_names_results_dict[f"{name}_dispersion"] = []
+        column_names_results_dict[f"{name}_risk"] = []
+
+
+    for parameter_value in parameter_list:
 
         # must reset agent before training it again in this case
-        curr_agent: Agent = agent.reset().from_dict(curr_agent_arguments)
+        curr_agent: Agent = agent.from_dict({parameter_name:parameter_value})
 
         results_path, summary_df = curr_agent.train(
-            logging_path=logging_path,
+            logging_path="",
             num_episodes=num_episodes,
             num_iterations=num_iterations,
-            log=True,
+            log=False,
         )
         utilities_results.append(utility_function(summary_df))
-        results_path_list.append(results_path)
+
+        # now computing across_time risk and dispersion for each column
+        for name in column_names:
+            dispersion, risk = across_time(data=summary_df, window=window,column=name,alpha=alpha)
+            column_names_results_dict[f"{name}_dispersion"].append(dispersion)
+            column_names_results_dict[f"{name}_risk"].append(risk)
 
     utilities_results = np.array(utilities_results)
 
-    iqr = IQR(utilities_results)
-    cvar = CVaR(utilities_results, alpha=alpha)
+    dispersion = IQR(utilities_results)
+    risk = CVaR(utilities_results, alpha=alpha)
 
     results_dict = {
-        "parameter": parameter,
+        "performance_test":"across_runs",
+        "agent_config_path": agent_config_path,
+        "parameter_name": parameter_name,
+        "parameter_list": parameter_list,
         "utility_function": utility_function.__name__,
         "utilities_results": utilities_results.tolist(),
-        "results_path_list": results_path_list,
-        "IQR": iqr,
-        "CVaR": cvar,
+        "utility_dispersion":dispersion,
+        "utility_risk": risk,
+        "column_names": column_names,
     }
 
-    return (iqr, cvar, results_dict)
+    for name in column_names:
+        results_dict[f"{name}_dispersion"] = column_names_results_dict[f"{name}_dispersion"]
+        results_dict[f"{name}_risk"] = column_names_results_dict[f"{name}_risk"]
+
+    return results_dict
 
 
 def across_fixed_policy(
     agent: Agent,
+    agent_config_path:str, #absolute path to the logging of the agent such that its configuration can be loaded
     num_testing: int,
-    logging_path: str,
     num_episodes: int,
+    num_iterations:int = None,
+    column_names:List[str] = ["Tset"], # list of the columns in summary df on which we wish to measure risk and dispersion
     utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
+    window:int = 3*6, # window to compute iqr and cvar across time
     alpha=0.05,
 ) -> Tuple[float, float]:
 
+    agent = load_trained_agent(agent,agent_config_path)
+
     # list to store utility for each run
     utilities_results = []
+    column_names_results_dict = {}
+
+    for name in column_names:
+        column_names_results_dict[f"{name}_dispersion"] = []
+        column_names_results_dict[f"{name}_risk"] = []
+
 
     for _ in range(num_testing):
 
-        _, summary_df = agent.test(
-            logging_path=logging_path,
+        results_path, summary_df = agent.test(
+            logging_path="",
             num_episodes=num_episodes,
-            num_iterations=None,
-            log=True,
+            num_iterations=num_iterations,
+            log=False,
         )
-
         utilities_results.append(utility_function(summary_df))
+
+        # now computing across_time risk and dispersion for each column
+        for name in column_names:
+            dispersion, risk = across_time(data=summary_df, window=window,column=name,alpha=alpha)
+            column_names_results_dict[f"{name}_dispersion"].append(dispersion)
+            column_names_results_dict[f"{name}_risk"].append(risk)
 
     utilities_results = np.array(utilities_results)
 
-    return (IQR(utilities_results), CVaR(utilities_results, alpha=alpha))
+    dispersion = IQR(utilities_results)
+    risk = CVaR(utilities_results, alpha=alpha)
+
+    results_dict = {
+        "performance_test":"fixed_policy",
+        "agent_config_path": agent_config_path,
+        "utility_function": utility_function.__name__,
+        "utilities_results": utilities_results.tolist(),
+        "utility_dispersion":dispersion,
+        "utility_risk": risk,
+        "column_names": column_names,
+    }
+
+    for name in column_names:
+        results_dict[f"{name}_dispersion"] = column_names_results_dict[f"{name}_dispersion"]
+        results_dict[f"{name}_risk"] = column_names_results_dict[f"{name}_risk"]
+
+    return results_dict
 
     # MAKE SURE THAT THE DATAFRAMES WE ARE GIVEN WERE FILTERED ON OCCUPANCY FIRST
 
@@ -291,33 +316,14 @@ def search_paths(
                 ## conditions are satisfied
                 if not (failed):
 
-                    df = pd.DataFrame({})
-                    # one has to be careful with generators because
-                    # they may be consumed only once, thus we
-                    # need to recreate them
-                    ## if no summary csv, possibly there was only one episode
-                    if len(list(Path(path.parent).glob("**/*_summary.csv"))) > 0:
-                        df = pd.read_csv(
-                            [
-                                str(curr)
-                                for curr in Path(path.parent).glob("**/*_summary.csv")
-                            ][0]
-                        )
-                        utility_list.append(utility_function(df))
+                    df = load_summary_df(path.parent)
+                    if not(df.empty):
+                        res = utility_function(df)
+                        res = res if not (normalized) else res / log_dict["num_episodes"]
+                        utility_list.append(res)
                         path_list.append(path)
-                    else:
-                        ## does the csv exist ?
-                        if len(list(Path(path.parent).glob("**/*_1.csv"))) > 0:
-                            df = pd.read_csv(
-                                [
-                                    str(curr)
-                                    for curr in Path(path.parent).glob("**/*_1.csv")
-                                ][0]
-                            )
-                    res = utility_function(df)
-                    res = res if not (normalized) else res / log_dict["num_episodes"]
-                    utility_list.append(res)
-                    path_list.append(path)
+
+
 
     path_list = np.array(path_list)
     utility_list = np.array(utility_list)
@@ -385,3 +391,82 @@ def all_combinations_list(arguments: Dict[str, List[Any]]) -> List[Dict[str, Any
 
     return argument_list
 
+
+
+
+
+def search_similar(searching_directory: str, subset_log_dict:Dict[str,Any]) -> bool:
+
+    for path in Path(searching_directory).glob("**/*json"):
+        if os.path.getsize(path) > 0 and str(path).__contains__("env_params"):
+            with open(path) as f:
+                curr_log_dict = json.load(f)
+                ## counting the number of key-values equalities
+                num_similar = [1 for k in subset_log_dict if (k in curr_log_dict)  and (subset_log_dict[k] == curr_log_dict[k])]
+                
+                # subset_log_dict is a subset of curr_log_dict
+                if len(num_similar) == len(subset_log_dict):
+                    return True
+
+    return False
+
+def load_json_params(results_path:str)->Dict[str,Any]:
+    log_dict={}
+    for path in Path(results_path).glob("**/*json"):
+        if os.path.getsize(path) > 0 and str(path).__contains__("env_params"):
+            with open(path) as f:
+                log_dict=json.load(f)
+
+    return log_dict
+
+
+def load_summary_df(results_path:str) -> pd.DataFrame:
+    df = pd.DataFrame({})
+    # one has to be careful with generators because
+    # they may be consumed only once, thus we
+    # need to recreate them
+    ## if no summary csv, possibly there was only one episode
+    if len(list(Path(results_path).glob("**/*_summary.csv"))) > 0:
+        df = pd.read_csv(
+            [
+                str(curr)
+                for curr in Path(results_path).glob("**/*_summary.csv")
+            ][0]
+        )
+    else:
+        ## does the csv exist ?
+        if len(list(Path(results_path).glob("**/*_1.csv"))) > 0:
+            df = pd.read_csv(
+                [
+                    str(curr)
+                    for curr in Path(results_path).glob("**/*_1.csv")
+                ][0]
+            )
+
+    return df
+
+
+def load_trained_agent(agent:Agent, results_path:str) -> Agent:
+
+    agent_log_dict = agent.log_dict()
+
+    results_log_dict = load_json_params(results_path)
+
+    new_params = {k:results_log_dict[k] for k in agent_log_dict if k in results_log_dict}
+
+    agent = agent.reset().from_dict(new_params).reset()
+
+
+    if len(list(Path(results_path).glob("**/torch_ep_summary*.pth"))) > 0:
+        for path in Path(results_path).glob("**/torch_ep_summary*.pth"):
+            agent.load(directory=str(path.parent), filename="torch_ep_summary")
+
+            return agent
+
+    elif  len(list(Path(results_path).glob("**/torch_ep_1*.pth"))) > 0:
+            for path in Path(results_path).glob("**/torch_ep_1*.pth"):
+                agent.load(directory=str(path.parent), filename="torch_ep_1")
+                return agent
+
+    else:
+        return None

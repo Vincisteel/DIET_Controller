@@ -45,7 +45,7 @@ class Agent(metaclass=ABCMeta):
         for k, v in dict_arguments.items():
             setattr(self, k, v)
 
-        return self
+        return self.reset()
 
     @abstractmethod
     def train(

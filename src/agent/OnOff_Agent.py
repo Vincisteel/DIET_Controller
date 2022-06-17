@@ -89,12 +89,13 @@ class OnOffAgent(Agent):
             num_iterations = self.env.numsteps
 
         ## instantiate logger
-        logger = SimpleLogger(
-            logging_path=logging_path,
-            agent_name="OnOff_Agent",
-            num_episodes=num_episodes,
-            num_iterations=num_iterations,
-        )
+        if log: 
+            logger = SimpleLogger(
+                logging_path=logging_path,
+                agent_name="OnOff_Agent",
+                num_episodes=num_episodes,
+                num_iterations=num_iterations,
+            )
 
         self.opts = {
             "Tair": {"secondary_y": None, "range": [10, 24], "unit": "(°C)",},
@@ -122,7 +123,8 @@ class OnOffAgent(Agent):
 
             state = self.env.reset()
             # need to chdir back to logging_path at each episode because calling env.reset() calls chdir() too
-            os.chdir(logging_path)
+            if log:
+                os.chdir(logging_path)
 
             for i in range(num_iterations):
 
@@ -196,7 +198,7 @@ class OnOffAgent(Agent):
 
         # self.env.close()
 
-        results_path = logger.RESULT_PATH
+        results_path = logger.RESULT_PATH if log else ""
 
         return (results_path, summary_df)
 
