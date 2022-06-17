@@ -3,4 +3,4 @@
 **/__pycache__
 **/Output_EPExport_Slave
 **/logs
-!logs/README*
+!logs/*.txt
