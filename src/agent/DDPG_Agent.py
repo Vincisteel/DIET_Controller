@@ -53,6 +53,7 @@ class ReplayBuffer:
         return self.size
 
 
+
 # Building a neural network for the actor model and a neural network for the actor target
 class Actor(nn.Module):
     def __init__(self, observation_dim, action_dim, min_action, max_action):
@@ -89,6 +90,49 @@ class Critic(nn.Module):
         x1 = self.layer_3(x1)
         return x1
 
+def mlp(sizes, activation, output_activation=nn.Identity):
+    layers = []
+    for j in range(len(sizes) - 1):
+        act = activation if j < len(sizes) - 2 else output_activation
+        layers += [nn.Linear(sizes[j], sizes[j + 1]), act()]
+    return nn.Sequential(*layers)
+
+
+class MLPActor(nn.Module):
+    def __init__(
+        self,
+        obs_dim: int,
+        act_dim: int,
+        inside_dim: int, 
+        num_hidden_layers:int,
+        activation,
+        min_action: float,
+        max_action: float,
+    ):
+        super().__init__()
+        hidden_sizes = [inside_dim]*num_hidden_layers
+        policy_sizes = [obs_dim] + list(hidden_sizes) + [act_dim]
+        self.policy = mlp(sizes = policy_sizes, activation= activation, output_activation=nn.Sigmoid)
+        self.min_action = min_action
+        self.max_action = max_action
+
+    def forward(self, obs):
+        # Return output from network scaled to action space limits.
+        return self.min_action + self.policy(obs) * (self.max_action - self.min_action)
+
+
+class MLPQFunction(nn.Module):
+    def __init__(self, obs_dim: int, act_dim: int, inside_dim: int, 
+        num_hidden_layers:int, activation):
+        super().__init__()
+        hidden_sizes = [inside_dim]*num_hidden_layers
+        self.q = mlp([obs_dim + act_dim] + list(hidden_sizes) + [1], activation)
+
+    def forward(self, obs, act):
+        #q = self.q(torch.cat([obs, act], dim=-1))
+        q = self.q(torch.cat([obs, act.reshape((obs.shape[0], 1))], dim=1))
+        return torch.squeeze(q, -1)  # Critical to ensure q has right shape.
+
 
 # Building the whole DDPG Training Process into a class
 class DDPG_Agent(Agent):
@@ -105,40 +149,64 @@ class DDPG_Agent(Agent):
         num_training_iterations: int = 100,
         num_random_episodes: int = 0,
         seed: int = 778,
+        num_hidden_layers:int = 1,
+        inside_dim:int = 128
     ):
 
         # seeding the agent
         self.seed_agent(seed)
 
+        self.seed = seed
         self.env = env
         self.memory_size = memory_size
         self.num_training_iterations = num_training_iterations
         self.num_random_episodes = num_random_episodes
+        self.inside_dim = inside_dim
+        self.num_hidden_layers = num_hidden_layers
 
         # Selecting the device (CPU or GPU)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         ## setting up actors and neural networks components
-        self.actor = Actor(
-            self.env.observation_dim,
-            self.env.action_dim,
+        self.actor = MLPActor(
+            obs_dim= self.env.observation_dim,
+            act_dim=self.env.action_dim,
+            num_hidden_layers=self.num_hidden_layers,
+            inside_dim=self.inside_dim,
             min_action=self.env.min_temp,
             max_action=self.env.max_temp,
+            activation=nn.ReLU
         ).to(self.device)
-        self.actor_target = Actor(
-            self.env.observation_dim,
-            self.env.action_dim,
+
+        self.actor_target = MLPActor(
+            obs_dim= self.env.observation_dim,
+            act_dim=self.env.action_dim,
+            num_hidden_layers=self.num_hidden_layers,
+            inside_dim=self.inside_dim,
             min_action=self.env.min_temp,
             max_action=self.env.max_temp,
+            activation=nn.ReLU
         ).to(self.device)
+
         self.actor_target.load_state_dict(self.actor.state_dict())
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=lr)
-        self.critic = Critic(self.env.observation_dim, self.env.action_dim).to(
-            self.device
-        )
-        self.critic_target = Critic(self.env.observation_dim, self.env.action_dim).to(
-            self.device
-        )
+
+        self.critic = MLPQFunction(
+            obs_dim= self.env.observation_dim,
+            act_dim=self.env.action_dim,
+            num_hidden_layers=self.num_hidden_layers,
+            inside_dim=self.inside_dim,
+            activation=nn.ReLU
+        ).to(self.device)
+        self.critic_target = MLPQFunction(
+            obs_dim= self.env.observation_dim,
+            act_dim=self.env.action_dim,
+            num_hidden_layers=self.num_hidden_layers,
+            inside_dim=self.inside_dim,
+            activation=nn.ReLU
+        ).to(self.device)
+
+
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=lr)
 
@@ -173,26 +241,44 @@ class DDPG_Agent(Agent):
     def reset(self) -> Agent:
         self.seed_agent(self.seed)
 
-        self.actor = Actor(
-            self.env.observation_dim,
-            self.env.action_dim,
+        self.actor = MLPActor(
+            obs_dim= self.env.observation_dim,
+            act_dim=self.env.action_dim,
+            num_hidden_layers=self.num_hidden_layers,
+            inside_dim=self.inside_dim,
             min_action=self.env.min_temp,
             max_action=self.env.max_temp,
+            activation=nn.ReLU
         ).to(self.device)
-        self.actor_target = Actor(
-            self.env.observation_dim,
-            self.env.action_dim,
+
+        self.actor_target = MLPActor(
+            obs_dim= self.env.observation_dim,
+            act_dim=self.env.action_dim,
+            num_hidden_layers=self.num_hidden_layers,
+            inside_dim=self.inside_dim,
             min_action=self.env.min_temp,
             max_action=self.env.max_temp,
+            activation=nn.ReLU
         ).to(self.device)
+
         self.actor_target.load_state_dict(self.actor.state_dict())
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr)
-        self.critic = Critic(self.env.observation_dim, self.env.action_dim).to(
-            self.device
-        )
-        self.critic_target = Critic(self.env.observation_dim, self.env.action_dim).to(
-            self.device
-        )
+
+        self.critic = MLPQFunction(
+            obs_dim= self.env.observation_dim,
+            act_dim=self.env.action_dim,
+            num_hidden_layers=self.num_hidden_layers,
+            inside_dim=self.inside_dim,
+            activation=nn.ReLU
+        ).to(self.device)
+        self.critic_target = MLPQFunction(
+            obs_dim= self.env.observation_dim,
+            act_dim=self.env.action_dim,
+            num_hidden_layers=self.num_hidden_layers,
+            inside_dim=self.inside_dim,
+            activation=nn.ReLU
+        ).to(self.device)
+
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr)
 
@@ -222,8 +308,8 @@ class DDPG_Agent(Agent):
         self,
         logging_path: str,
         num_episodes: int,
-        num_iterations: int,
-        log: bool,
+        num_iterations: int = None,
+        log: bool = True,
         is_test: bool = False,
     ) -> Tuple[str, pd.DataFrame]:
 
@@ -390,6 +476,8 @@ class DDPG_Agent(Agent):
             "policy_noise": self.policy_noise,
             "noise_clip": self.noise_clip,
             "lr": self.lr,
+            "inside_dim":self.inside_dim,
+            "num_hidden_layers":self.num_hidden_layers,
             "num_training_iterations": self.num_training_iterations,
             "num_random_episodes": self.num_random_episodes,
             "seed": self.seed,
@@ -468,7 +556,8 @@ class DDPG_Agent(Agent):
             # Step 12: We update our Actor model by performing gradient ascent on the output of the first Critic model
             ## CHECK HERE
             temporary = self.critic.forward(state, self.actor(state))
-            actor_loss = - temporary.mean()/temporary.std()  ## temporary.std()
+            #actor_loss = - temporary.mean()/temporary.std()  ## temporary.std()
+            actor_loss = temporary.mean()/temporary.std()  ## temporary.std()
             #print(
             #    f"MEAN: {temporary.mean()}, STD: {temporary.std()} ACTOR LOSS:{actor_loss}"
             #)

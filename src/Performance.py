@@ -50,7 +50,8 @@ def IQR(arr: np.ndarray) -> float:
 def CVaR(arr: np.ndarray, alpha: float = 0.05) -> float:
     """ Computes the conditional value at risk of an array with risk threshold alpha"""
     VaR = np.quantile(arr, alpha)
-    return arr[arr < VaR].mean()
+    filtered =  arr[arr < VaR]
+    return filtered.mean() if len(filtered) > 0 else arr.min()
 
 
 # ACROSS_TIME
@@ -147,6 +148,7 @@ def across_runs(
         "agent_config_path": agent_config_path,
         "parameter_name": parameter_name,
         "parameter_list": parameter_list,
+        "window": window,
         "utility_function": utility_function.__name__,
         "utilities_results": utilities_results.tolist(),
         "utility_dispersion":dispersion,
@@ -208,6 +210,7 @@ def across_fixed_policy(
     results_dict = {
         "performance_test":"fixed_policy",
         "agent_config_path": agent_config_path,
+        "window": window,
         "utility_function": utility_function.__name__,
         "utilities_results": utilities_results.tolist(),
         "utility_dispersion":dispersion,
