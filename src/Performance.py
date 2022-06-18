@@ -56,28 +56,77 @@ def CVaR(arr: np.ndarray, alpha: float = 0.05) -> float:
 
 # ACROSS_TIME
 
-def compute_dispersion_across_time(
-    data: pd.DataFrame, column: str, window: int
-) -> float:
-    # Compute rolling inter-quartile range and then take the mean
-    iqr = data[column].rolling(window=window).aggregate(lambda x: IQR(np.array(x))).mean()
 
-    return iqr
+def compute_dispersion_across_time(
+    data: pd.DataFrame, column_name: str, window: int
+) -> float:
+    """We define the measure of dispersion across a training run as the mean of the 
+    rolling inter-quartile range.
+
+    Args:
+        data (pd.DataFrame): DataFrame containing the specified column
+        column_name (str): column name over which dispersion should be computed
+        window (int): window length of the rolling inter-quartile range.
+
+    Returns:
+        float: the measure of dispersion across time
+    """
+
+    return (
+        data[column_name]
+        .rolling(window=window)
+        .aggregate(lambda x: IQR(np.array(x)))
+        .mean()
+    )
 
 
 def compute_risk_across_time(
-    data: pd.DataFrame, column: str, alpha: float = 0.05
+    data: pd.DataFrame, column_name: str, alpha: float, window: int
 ) -> float:
+    """We define the measure of risk across a training run as the mean of the 
+    rolling conditional value at risk.
 
-    return CVaR(np.array(data[column]), alpha=alpha)
+    Args:
+        data (pd.DataFrame): DataFrame containing the specified column
+        column_name (str): column name over which dispersion should be computed
+        window (int): window length of the rolling inter-quartile range.
+    Returns:
+        float: the measure of risk across time
+    """
+
+    return (
+        data[column_name]
+        .rolling(window=window)
+        .aggregate(lambda x: CVaR(arr=np.array(x), alpha=alpha))
+        .mean()
+    )
 
 
 def across_time(
     data: pd.DataFrame,
     window: int = 3 * 6,
-    column: str = "Tset",
+    column_name: str = "Reward",
     alpha: float = 0.05,
-) -> Tuple[float, float, float]:
+) -> Tuple[float, float]:
+    """Given a dataframe summarizing a training session, computes the mean risk and mean dispersion of the specified column
+    over a specified time window. 
+    
+    Why do we use a window? 
+
+    It is such that the computed risk and dispersion still make sense in the context of real-life usage. Indeed, a training session
+    may last over 5 months of simulated data but we should assess the behaviour of the controller over the span of a day or hours
+    as it is the time span effectively experienced by the human users. In this case, having a window = 3*6 spans 3 hours because the 
+    Simple Environment does 6 steps per hour.
+
+    Args:
+        data (pd.DataFrame): Summary DataFrame of the training session.
+        window (int, optional): Time window over which dispersion and risk are computed. Defaults to 3*6.
+        column_name (str, optional): Name of the column over which we compute. Defaults to "Reward".
+        alpha (float, optional): Risk threshold. Defaults to 0.05.
+
+    Returns:
+        Tuple[float, float]: (dispersion, risk)
+    """
 
     # compute dispersion and risk over a sliding window of time (e.g. window = 1 day)
     # WHY USING A WINDOW ?
@@ -85,26 +134,52 @@ def across_time(
     # the controller can be when used in real life. Thus, we should assess its behaviour over the span
     # of a day instead of 5 months or longer.
 
-    dispersion = compute_dispersion_across_time(data, column, window)
-    risk = compute_risk_across_time(data, column, alpha=alpha)
+    dispersion = compute_dispersion_across_time(data, column_name, window)
+    risk = compute_risk_across_time(data, column_name, alpha=alpha)
 
     return (dispersion, risk)
 
 
-# measuring how much the "optimal" parameters are sensible to stochasticity in the training progress
 def across_runs(
     agent: Agent,
-    agent_config_path:str, #absolute path to the logging of the agent such that its configuration can be loaded
+    agent_config_path: str,  # absolute path to the logging of the agent such that its configuration can be loaded
     parameter: Tuple[str, List[Any]],
     num_episodes: int,
     num_iterations: int = None,
-    column_names:List[str] = ["Tset"], # list of the columns in summary df on which we wish to measure risk and dispersion
+    column_names: List[str] = [
+        "Reward",
+        "Tset",
+    ],  # list of the columns in summary df on which we wish to measure risk and dispersion
     utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
-    window:int = 3*6, # window to compute iqr and cvar across time
+    window: int = 3 * 6,  # window to compute iqr and cvar across time
     alpha=0.05,
-):
+) -> Dict[str, Any]:
+    """Given an agent initilaized with its environment, the absolute path to the configuration / log we wish to assess,
+    loads the correct configuration on the agent. 
 
-    agent = load_trained_agent(agent,agent_config_path).reset()
+    Then, given the parameter name that we wish to vary and the list of the different values it will take, 
+    it iterates over all the possible new configurations and:
+
+    - compute the dispersion and risk of the specified column names for each training run / session (by using across_time())
+    - compute the dispersion and risk of the utility function over all training runs / sessions
+
+    Args:
+        agent (Agent): Agent to be assessed, only needs to be instantiated with the correct environment
+        agent_config_path (str):  Absolute path to the configuration / log we wish to assess
+        num_episodes (int): number of episodes of each training session
+        num_iterations (int, optional): number of iterations of each training session. Defaults to None.
+        column_names (List[str], optional): Name of the columns over which we will compute dispersion and risk at each training session.
+        Defaults to [ "Reward", "Tset", ].
+        utility_function (Callable[[pd.DataFrame], float], optional): Utility function to assess performance of a training session.
+        Defaults to cumulative_reward.
+        window (int, optional): Time window over which dispersion and risk are computed. Defaults to 3*6.
+        alpha (float, optional): Risk threshold. Defaults to 0.05.
+    Returns:
+        (Dict[str,Any]): dictionary summarizing all results of the performance assessment.
+    """
+
+    ## loading specified config
+    agent = load_trained_agent(agent, agent_config_path).reset()
 
     parameter_name, parameter_list = parameter
 
@@ -114,15 +189,14 @@ def across_runs(
     # dictionary for results for each column
     column_names_results_dict = {}
 
+    # initiliazing key value pairs
     for name in column_names:
         column_names_results_dict[f"{name}_dispersion"] = []
         column_names_results_dict[f"{name}_risk"] = []
 
-
     for parameter_value in parameter_list:
 
-        # must reset agent before training it again in this case
-        curr_agent: Agent = agent.from_dict({parameter_name:parameter_value})
+        curr_agent: Agent = agent.from_dict({parameter_name: parameter_value})
 
         results_path, summary_df = curr_agent.train(
             logging_path="",
@@ -134,30 +208,35 @@ def across_runs(
 
         # now computing across_time risk and dispersion for each column
         for name in column_names:
-            dispersion, risk = across_time(data=summary_df, window=window,column=name,alpha=alpha)
+            dispersion, risk = across_time(
+                data=summary_df, window=window, column_name=name, alpha=alpha
+            )
             column_names_results_dict[f"{name}_dispersion"].append(dispersion)
             column_names_results_dict[f"{name}_risk"].append(risk)
 
+    # computing dispersion and risk of utility
     utilities_results = np.array(utilities_results)
-
     dispersion = IQR(utilities_results)
     risk = CVaR(utilities_results, alpha=alpha)
 
+    # summarizing results
     results_dict = {
-        "performance_test":"across_runs",
+        "performance_test": "across_runs",
         "agent_config_path": agent_config_path,
         "parameter_name": parameter_name,
         "parameter_list": parameter_list,
         "window": window,
         "utility_function": utility_function.__name__,
         "utilities_results": utilities_results.tolist(),
-        "utility_dispersion":dispersion,
+        "utility_dispersion": dispersion,
         "utility_risk": risk,
         "column_names": column_names,
     }
 
     for name in column_names:
-        results_dict[f"{name}_dispersion"] = column_names_results_dict[f"{name}_dispersion"]
+        results_dict[f"{name}_dispersion"] = column_names_results_dict[
+            f"{name}_dispersion"
+        ]
         results_dict[f"{name}_risk"] = column_names_results_dict[f"{name}_risk"]
 
     return results_dict
@@ -165,17 +244,46 @@ def across_runs(
 
 def across_fixed_policy(
     agent: Agent,
-    agent_config_path:str, #absolute path to the logging of the agent such that its configuration can be loaded
+    agent_config_path: str,  # absolute path to the logging of the agent such that its configuration can be loaded
     num_testing: int,
     num_episodes: int,
-    num_iterations:int = None,
-    column_names:List[str] = ["Tset"], # list of the columns in summary df on which we wish to measure risk and dispersion
+    num_iterations: int = None,
+    column_names: List[str] = [
+        "Reward",
+        "Tset",
+    ],  # list of the columns in summary df on which we wish to measure risk and dispersion
     utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
-    window:int = 3*6, # window to compute iqr and cvar across time
+    window: int = 3 * 6,  # window to compute iqr and cvar across time
     alpha=0.05,
-) -> Tuple[float, float]:
+) -> Dict[str,Any]:
+    """Given an agent initilaized with its environment, the absolute path to the configuration / log we wish to assess,
+    loads the correct configuration on the agent. 
 
-    agent = load_trained_agent(agent,agent_config_path)
+    It will test the fixed policy num_testing times and:
+
+        - compute the dispersion and risk of the specified column names for each testing run / session (by using across_time())
+        - compute the dispersion and risk of the utility function over all testing runs / sessions
+
+    Args:
+        agent (Agent): Agent to be assessed, only needs to be instantiated with the correct environment
+        agent_config_path (str):  Absolute path to the configuration / log we wish to assess
+        num_testing(int): The number of times the fixed policy will be tested
+        num_episodes (int): number of episodes of each training session
+        num_iterations (int, optional): number of iterations of each testing session. Defaults to None.
+        column_names (List[str], optional): Name of the columns over which we will compute dispersion and risk at each testing session.
+        Defaults to [ "Reward", "Tset", ].
+        utility_function (Callable[[pd.DataFrame], float], optional): Utility function to assess performance of a training session.
+        Defaults to cumulative_reward.
+        window (int, optional): Time window over which dispersion and risk are computed. Defaults to 3*6.
+        alpha (float, optional): Risk threshold. Defaults to 0.05.
+
+    Returns:
+        (Dict[str,Any]): dictionary summarizing all results of the performance assessment.
+    """
+    
+
+
+    agent = load_trained_agent(agent, agent_config_path)
 
     # list to store utility for each run
     utilities_results = []
@@ -184,7 +292,6 @@ def across_fixed_policy(
     for name in column_names:
         column_names_results_dict[f"{name}_dispersion"] = []
         column_names_results_dict[f"{name}_risk"] = []
-
 
     for _ in range(num_testing):
 
@@ -198,7 +305,9 @@ def across_fixed_policy(
 
         # now computing across_time risk and dispersion for each column
         for name in column_names:
-            dispersion, risk = across_time(data=summary_df, window=window,column=name,alpha=alpha)
+            dispersion, risk = across_time(
+                data=summary_df, window=window, column_name=name, alpha=alpha
+            )
             column_names_results_dict[f"{name}_dispersion"].append(dispersion)
             column_names_results_dict[f"{name}_risk"].append(risk)
 
@@ -208,61 +317,26 @@ def across_fixed_policy(
     risk = CVaR(utilities_results, alpha=alpha)
 
     results_dict = {
-        "performance_test":"fixed_policy",
+        "performance_test": "fixed_policy",
         "agent_config_path": agent_config_path,
         "window": window,
         "utility_function": utility_function.__name__,
         "utilities_results": utilities_results.tolist(),
-        "utility_dispersion":dispersion,
+        "utility_dispersion": dispersion,
         "utility_risk": risk,
         "column_names": column_names,
     }
 
     for name in column_names:
-        results_dict[f"{name}_dispersion"] = column_names_results_dict[f"{name}_dispersion"]
+        results_dict[f"{name}_dispersion"] = column_names_results_dict[
+            f"{name}_dispersion"
+        ]
         results_dict[f"{name}_risk"] = column_names_results_dict[f"{name}_risk"]
 
     return results_dict
 
-    # MAKE SURE THAT THE DATAFRAMES WE ARE GIVEN WERE FILTERED ON OCCUPANCY FIRST
 
-    # should there be a global function that runs the entire pipeline ?
-    # DATA MODEL
-    # we should expect dataframes of the length of the training and containing the attributes we want
-
-    # Across time
-    # Specifiy the attribute we want to assess
-
-    # Across Runs
-    # specify the list of parameters : seeds, hyperparameters, .... to check the reproducibility of the run
-
-    # Across rollouts of a fixed policy
-    # perform the tests ourselves by just using a policy
-    # need to know the environment parameters, get from the json and set parameters
-    # same idea for the agent, load everything from the json,  and put him in test mode, i guess
-
-
-# Example of how to use search_paths:
-# searching_directory = r"C:\Users\DIET_Controller"
-#
-#  conditions={
-#      "alpha": ["<",20], # sessions where alpha was less than 20
-#      "beta": [">",2], # sessions where beta was bigger than 2
-#      "num_iterations": ["=",21744], # sessions where the whole simulation episode was used
-#      "is_test": ["=", True] # only testing sessions
-#  }
-#
-# ## This example is specific to SimpleEnvironment
-# ## One may also define
-#  conditions["pmv"] = {
-#          "[-inf,-2]": ["<",0.2], # less than 20% of the time spent in the [-inf,-2] pmv interval
-#          "[-0.5,0.0]": [">", 0.5] # more than 50% of the time spent in the [-0.5,0.0] pmv interval
-#  }
-# Possible intervals are = ['[-inf,-2]', '[-2.0,-1.5]', '[-1.5,-1.0]',
-#  '[-1.0,-0.5]', '[-0.5,0.0]', '[0.0,0.5]', '[0.5,1.0]', '[1.0,inf]']
-#
-# ## This will return the list of absolute paths of log folders satisfying the above conditions.
-#  path_list = search_paths(searching_directory,conditions)
+## USEFUL METHODS
 
 
 def search_paths(
@@ -273,7 +347,31 @@ def search_paths(
     normalized: bool = False,
 ) -> List[str]:
     """ Finds all absolute paths in searching_directory of agent sessions that satisfy the specified conditions.
-        Outputs top_k (all if -1) absolute paths ranked according to the utility function
+        Outputs top_k (all if -1) absolute paths ranked according to the utility function.
+
+
+        Example of how to use search_paths:
+        searching_directory = r"C:\Users\DIET_Controller"
+                 conditions={
+             "alpha": ["<",20], # sessions where alpha was less than 20
+             "beta": [">",2], # sessions where beta was bigger than 2
+             "num_iterations": ["=",21744], # sessions where the whole simulation episode was used
+             "is_test": ["=", True] # only testing sessions
+         }
+
+        ## This example is specific to SimpleEnvironment
+        ## One may also define
+         conditions["pmv"] = {
+                 "[-inf,-2]": ["<",0.2], # less than 20% of the time spent in the [-inf,-2] pmv interval
+                 "[-0.5,0.0]": [">", 0.5] # more than 50% of the time spent in the [-0.5,0.0] pmv interval
+         }
+        Possible intervals are = ['[-inf,-2]', '[-2.0,-1.5]', '[-1.5,-1.0]',
+         '[-1.0,-0.5]', '[-0.5,0.0]', '[0.0,0.5]', '[0.5,1.0]', '[1.0,inf]']
+
+        ## This will return the list of absolute paths of log folders satisfying the above conditions.
+         path_list = search_paths(searching_directory,conditions)
+
+
     Args:
         searching_directory (str): Absolute path of the relevant directory where the logs of interest may be found
         conditions (Dict[str,Any]): Conditions that the session must satisfy. Further details on how to define them below.
@@ -320,13 +418,13 @@ def search_paths(
                 if not (failed):
 
                     df = load_summary_df(path.parent)
-                    if not(df.empty):
+                    if not (df.empty):
                         res = utility_function(df)
-                        res = res if not (normalized) else res / log_dict["num_episodes"]
+                        res = (
+                            res if not (normalized) else res / log_dict["num_episodes"]
+                        )
                         utility_list.append(res)
                         path_list.append(path)
-
-
 
     path_list = np.array(path_list)
     utility_list = np.array(utility_list)
@@ -395,35 +493,73 @@ def all_combinations_list(arguments: Dict[str, List[Any]]) -> List[Dict[str, Any
     return argument_list
 
 
+def search_similar(searching_directory: str, subset_log_dict: Dict[str, Any]) -> bool:
+    """Utilities function to be used when hyperparameter tuning to avoid training already trained agent specifications.
 
+    Given a searching directory and dictionary of parameters, will search the directory to see
+    if any logged parameter dictionary contains the specified parameters. 
+    
+    For example, one can specify subset_log_dict as the parameters of an agent to be trained and
+    the searching directory the directory of logs of this agent. Then, one may use this function
+    to avoid training already trained agent specifications by first checking if it already exists
+    in the logs.
 
+    Args:
+        searching_directory (str): Absolute path to the directory where the logs should be searched
+        subset_log_dict (Dict[str, Any]): Dictionary of parameters.
 
-def search_similar(searching_directory: str, subset_log_dict:Dict[str,Any]) -> bool:
+    Returns:
+        bool: If True, there exists a log containing those parameters.
+    """
 
     for path in Path(searching_directory).glob("**/*json"):
         if os.path.getsize(path) > 0 and str(path).__contains__("env_params"):
             with open(path) as f:
                 curr_log_dict = json.load(f)
                 ## counting the number of key-values equalities
-                num_similar = [1 for k in subset_log_dict if (k in curr_log_dict)  and (subset_log_dict[k] == curr_log_dict[k])]
-                
+                num_similar = [
+                    1
+                    for k in subset_log_dict
+                    if (k in curr_log_dict) and (subset_log_dict[k] == curr_log_dict[k])
+                ]
+
                 # subset_log_dict is a subset of curr_log_dict
                 if len(num_similar) == len(subset_log_dict):
                     return True
 
     return False
 
-def load_json_params(results_path:str)->Dict[str,Any]:
-    log_dict={}
+
+def load_json_params(results_path: str) -> Dict[str, Any]:
+    """Given an absolute path of a log session, loads the json file of parameters as a dictionary.
+
+    Args:
+        results_path (str): Absolute path of a log session
+
+    Returns:
+        Dict[str, Any]: Dictionary of the parameters in the json file in results_path
+    """
+
+    log_dict = {}
     for path in Path(results_path).glob("**/*json"):
         if os.path.getsize(path) > 0 and str(path).__contains__("env_params"):
             with open(path) as f:
-                log_dict=json.load(f)
+                log_dict = json.load(f)
 
     return log_dict
 
 
-def load_summary_df(results_path:str) -> pd.DataFrame:
+def load_summary_df(results_path: str) -> pd.DataFrame:
+    """Given an absolute path of a log session, loads the summary DataFrame of the session.
+
+    Args:
+        results_path (str): Absolute path of a log session
+
+    Returns:
+        pd.DataFrame: Summary DataFrame of the training session
+    """
+
+
     df = pd.DataFrame({})
     # one has to be careful with generators because
     # they may be consumed only once, thus we
@@ -431,34 +567,39 @@ def load_summary_df(results_path:str) -> pd.DataFrame:
     ## if no summary csv, possibly there was only one episode
     if len(list(Path(results_path).glob("**/*_summary.csv"))) > 0:
         df = pd.read_csv(
-            [
-                str(curr)
-                for curr in Path(results_path).glob("**/*_summary.csv")
-            ][0]
+            [str(curr) for curr in Path(results_path).glob("**/*_summary.csv")][0]
         )
     else:
         ## does the csv exist ?
         if len(list(Path(results_path).glob("**/*_1.csv"))) > 0:
             df = pd.read_csv(
-                [
-                    str(curr)
-                    for curr in Path(results_path).glob("**/*_1.csv")
-                ][0]
+                [str(curr) for curr in Path(results_path).glob("**/*_1.csv")][0]
             )
 
     return df
 
 
-def load_trained_agent(agent:Agent, results_path:str) -> Agent:
+def load_trained_agent(agent: Agent, results_path: str) -> Agent:
+    """Given an initialized agent with its environment and an absolute path of a training session,
+        loads the trained data structures of this session.
+
+    Args:
+        agent (Agent): Initialized agent with its environment
+        results_path (str): Absolute path of the log session of the training session
+
+    Returns:
+        Agent: Agent with trained data structures of the training session
+    """
 
     agent_log_dict = agent.log_dict()
 
     results_log_dict = load_json_params(results_path)
 
-    new_params = {k:results_log_dict[k] for k in agent_log_dict if k in results_log_dict}
+    new_params = {
+        k: results_log_dict[k] for k in agent_log_dict if k in results_log_dict
+    }
 
     agent = agent.reset().from_dict(new_params).reset()
-
 
     if len(list(Path(results_path).glob("**/torch_ep_summary*.pth"))) > 0:
         for path in Path(results_path).glob("**/torch_ep_summary*.pth"):
@@ -466,10 +607,10 @@ def load_trained_agent(agent:Agent, results_path:str) -> Agent:
 
             return agent
 
-    elif  len(list(Path(results_path).glob("**/torch_ep_1*.pth"))) > 0:
-            for path in Path(results_path).glob("**/torch_ep_1*.pth"):
-                agent.load(directory=str(path.parent), filename="torch_ep_1")
-                return agent
+    elif len(list(Path(results_path).glob("**/torch_ep_1*.pth"))) > 0:
+        for path in Path(results_path).glob("**/torch_ep_1*.pth"):
+            agent.load(directory=str(path.parent), filename="torch_ep_1")
+            return agent
 
     else:
         return None
