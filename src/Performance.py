@@ -124,7 +124,7 @@ def across_time(
         alpha (float, optional): Risk threshold. Defaults to 0.05.
 
     Returns:
-        Tuple[float, float]: _description_
+        Tuple[float, float]: (dispersion, risk)
     """
 
     # compute dispersion and risk over a sliding window of time (e.g. window = 1 day)
@@ -333,6 +333,7 @@ def across_fixed_policy(
     return results_dict
 
 
+## USEFUL METHODS
 
 
 def search_paths(
@@ -576,11 +577,11 @@ def load_summary_df(results_path: str) -> pd.DataFrame:
 
 
 def load_trained_agent(agent: Agent, results_path: str) -> Agent:
-    """Given an initialized agent and an absolute path of a training session,
+    """Given an initialized agent with its environment and an absolute path of a training session,
         loads the trained data structures of this session.
 
     Args:
-        agent (Agent): Initialized agent
+        agent (Agent): Initialized agent with its environment
         results_path (str): Absolute path of the log session of the training session
 
     Returns:
