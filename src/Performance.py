@@ -50,7 +50,7 @@ def IQR(arr: np.ndarray) -> float:
 def CVaR(arr: np.ndarray, alpha: float = 0.05) -> float:
     """ Computes the conditional value at risk of an array with risk threshold alpha"""
     VaR = np.quantile(arr, alpha)
-    filtered =  arr[arr < VaR]
+    filtered = arr[arr < VaR]
     return filtered.mean() if len(filtered) > 0 else arr.min()
 
 
@@ -255,7 +255,7 @@ def across_fixed_policy(
     utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
     window: int = 3 * 6,  # window to compute iqr and cvar across time
     alpha=0.05,
-) -> Dict[str,Any]:
+) -> Dict[str, Any]:
     """Given an agent initilaized with its environment, the absolute path to the configuration / log we wish to assess,
     loads the correct configuration on the agent. 
 
@@ -280,8 +280,6 @@ def across_fixed_policy(
     Returns:
         (Dict[str,Any]): dictionary summarizing all results of the performance assessment.
     """
-    
-
 
     agent = load_trained_agent(agent, agent_config_path)
 
@@ -351,7 +349,7 @@ def search_paths(
 
 
         Example of how to use search_paths:
-        searching_directory = r"C:\Users\DIET_Controller"
+        searching_directory = r"C:\\Users\\DIET_Controller"
                  conditions={
              "alpha": ["<",20], # sessions where alpha was less than 20
              "beta": [">",2], # sessions where beta was bigger than 2
@@ -558,7 +556,6 @@ def load_summary_df(results_path: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Summary DataFrame of the training session
     """
-
 
     df = pd.DataFrame({})
     # one has to be careful with generators because
