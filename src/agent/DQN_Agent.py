@@ -35,11 +35,11 @@ class DQNAgent(Agent):
         """Deep Q-Learning Agent. Made to interact with DiscreteEnvironment. Inherits from Agent class.
 
         Attributes:
-            epsilon: Parameter that defines the level of exploration of the agent. We refer to the definition
+            epsilon(float): Parameter that defines the level of exploration of the agent. We refer to the definition
             of epsilon-greedy action selection (https://www.geeksforgeeks.org/epsilon-greedy-algorithm-in-reinforcement-learning/).
-            replay_buffer: Replay buffer to store past experiences, experiences that will be used to train the DQN.
+            replay_buffer(ReplayBuffer): Replay buffer to store past experiences, experiences that will be used to train the DQN.
             transition: A list containing the current state, the action taken and the next state of the agent.
-
+            dqn(Network): Neural network approximating the Q-function.  
 
         Args:
             env (Environment): Environment inheriting from the Environment class.
@@ -71,6 +71,7 @@ class DQNAgent(Agent):
         self.seed = seed
         self.inside_dim = inside_dim
         self.num_hidden_layers = num_hidden_layers
+        self.opts={}
 
         ## seeding the agent
         self.seed_agent(self.seed)
@@ -330,28 +331,30 @@ class DQNAgent(Agent):
             # epsilons and losses have different length since they only start to fill up when
             # the replay buffer is full (i.e. we can train) thus we must pad/extend the length.
             # this is because plotting requires same length lists.
-            if not(self.is_test):
+            if not (self.is_test):
                 len_difference = len(tair) - len(epsilons)
                 pad_epsilon = [epsilons[0] for i in range(len_difference)]
                 epsilons = pad_epsilon + epsilons
 
-                temp_losses = [loss for loss in losses for _ in range(self.actor_update)]
+                temp_losses = [
+                    loss for loss in losses for _ in range(self.actor_update)
+                ]
                 len_difference = len(tair) - len(temp_losses)
                 pad_losses = [0 for i in range(len_difference)]
                 temp_losses = pad_losses + temp_losses
 
-            columns={
-                    "Tair": tair[lower:upper],
-                    "Tset": actions[lower:upper],
-                    "PMV": pmv[lower:upper],
-                    "Heating": qheat[lower:upper],
-                    "Reward": rewards[lower:upper],
-                    "Occ": occ[lower:upper],
-                }
+            columns = {
+                "Tair": tair[lower:upper],
+                "Tset": actions[lower:upper],
+                "PMV": pmv[lower:upper],
+                "Heating": qheat[lower:upper],
+                "Reward": rewards[lower:upper],
+                "Occ": occ[lower:upper],
+            }
 
-            if not(self.is_test):
+            if not (self.is_test):
                 columns["Loss"] = temp_losses[lower:upper]
-                columns["Epsilon"]= epsilons[lower:upper]
+                columns["Epsilon"] = epsilons[lower:upper]
 
             summary_df = pd.DataFrame(columns)
 
@@ -366,30 +369,28 @@ class DQNAgent(Agent):
                     opts=self.opts,
                 )
 
-           
         # Summary that contatenates all episodes together for a complete overview of the training
 
         ## As above, extend the length of the loss array such that it is of correct size for plotting
-        if not(self.is_test):
+        if not (self.is_test):
             temp_losses = [loss for loss in losses for _ in range(self.actor_update)]
             len_difference = len(tair) - len(temp_losses)
             pad_losses = [0 for i in range(len_difference)]
             temp_losses = pad_losses + temp_losses
 
-        columns={
-                "Tair": tair,
-                "Tset": actions,
-                "PMV": pmv,
-                "Heating": qheat,
-                "Reward": rewards,
-                "Occ": occ,
-            }
+        columns = {
+            "Tair": tair,
+            "Tset": actions,
+            "PMV": pmv,
+            "Heating": qheat,
+            "Reward": rewards,
+            "Occ": occ,
+        }
 
-        if not(self.is_test):
+        if not (self.is_test):
             columns["Loss"] = temp_losses
-            columns["Epsilon"]= epsilons
+            columns["Epsilon"] = epsilons
 
-            
         summary_df = pd.DataFrame(columns)
 
         summary_df["Reward"] = summary_df["Reward"].apply(lambda x: float(x[0]))
@@ -403,10 +404,8 @@ class DQNAgent(Agent):
                 opts=self.opts,
             )
 
-            #self.save(
-            #directory=f"{logger.RESULT_PATH}/model_weights", filename=f"torch_ep_summary")
-
-
+            # self.save(
+            # directory=f"{logger.RESULT_PATH}/model_weights", filename=f"torch_ep_summary")
 
         results_path = logger.RESULT_PATH if log else ""
 
