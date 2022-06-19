@@ -61,7 +61,7 @@ class Logger(metaclass=ABCMeta):
 
         filename = f"performance_results_{self.time}"
 
-        with open(f"{self.PERFORMANCE_PATH}\{suffix}\{filename}", "w") as f:
+        with open(f"{self.PERFORMANCE_PATH}\{suffix}\{filename}.json", "w") as f:
             f.write(json.dumps(results, indent=True))
 
     @staticmethod

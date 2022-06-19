@@ -135,7 +135,7 @@ def across_time(
     # of a day instead of 5 months or longer.
 
     dispersion = compute_dispersion_across_time(data, column_name, window)
-    risk = compute_risk_across_time(data, column_name, alpha=alpha)
+    risk = compute_risk_across_time(data, column_name, alpha=alpha, window=window)
 
     return (dispersion, risk)
 
@@ -222,12 +222,15 @@ def across_runs(
     # summarizing results
     results_dict = {
         "performance_test": "across_runs",
+        "num_episodes": num_episodes,
+        "num_iterations":num_iterations,
         "agent_config_path": agent_config_path,
         "parameter_name": parameter_name,
         "parameter_list": parameter_list,
         "window": window,
         "utility_function": utility_function.__name__,
         "utilities_results": utilities_results.tolist(),
+        "utility_mean": utilities_results.mean(),
         "utility_dispersion": dispersion,
         "utility_risk": risk,
         "column_names": column_names,
@@ -237,7 +240,12 @@ def across_runs(
         results_dict[f"{name}_dispersion"] = column_names_results_dict[
             f"{name}_dispersion"
         ]
+
+        results_dict[f"{name}_dispersion_mean"] = np.array(column_names_results_dict[
+            f"{name}_dispersion"]).mean()
+
         results_dict[f"{name}_risk"] = column_names_results_dict[f"{name}_risk"]
+        results_dict[f"{name}_risk_mean"] = np.array(column_names_results_dict[f"{name}_risk"]).mean()
 
     return results_dict
 
@@ -318,10 +326,14 @@ def across_fixed_policy(
 
     results_dict = {
         "performance_test": "fixed_policy",
+        "num_testing":num_testing,
+        "num_episodes": num_episodes,
+        "num_iterations":num_iterations,
         "agent_config_path": agent_config_path,
         "window": window,
         "utility_function": utility_function.__name__,
         "utilities_results": utilities_results.tolist(),
+        "utility_mean": utilities_results.mean(),
         "utility_dispersion": dispersion,
         "utility_risk": risk,
         "column_names": column_names,
@@ -331,7 +343,12 @@ def across_fixed_policy(
         results_dict[f"{name}_dispersion"] = column_names_results_dict[
             f"{name}_dispersion"
         ]
+
+        results_dict[f"{name}_dispersion_mean"] = np.array(column_names_results_dict[
+            f"{name}_dispersion"]).mean()
+
         results_dict[f"{name}_risk"] = column_names_results_dict[f"{name}_risk"]
+        results_dict[f"{name}_risk_mean"] = np.array(column_names_results_dict[f"{name}_risk"]).mean()
 
     return results_dict
 
@@ -351,7 +368,7 @@ def search_paths(
 
 
         Example of how to use search_paths:
-        searching_directory = r"C:\Users\DIET_Controller"
+        searching_directory = r"C:\\Users\\DIET_Controller"
                  conditions={
              "alpha": ["<",20], # sessions where alpha was less than 20
              "beta": [">",2], # sessions where beta was bigger than 2
@@ -383,6 +400,7 @@ def search_paths(
 
     Returns:
         List[str]: All the absolute paths of the sessions logs that satisfy the defined conditions.
+    
     """
 
     ## list of paths satisfiying the conditions
