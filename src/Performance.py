@@ -152,7 +152,8 @@ def across_runs(
     ],  # list of the columns in summary df on which we wish to measure risk and dispersion
     utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
     window: int = 3 * 6,  # window to compute iqr and cvar across time
-    alpha=0.05,
+    alpha:float=0.05,
+    need_load:bool = True
 ) -> Dict[str, Any]:
     """Given an agent initilaized with its environment, the absolute path to the configuration / log we wish to assess,
     loads the correct configuration on the agent. 
@@ -174,12 +175,14 @@ def across_runs(
         Defaults to cumulative_reward.
         window (int, optional): Time window over which dispersion and risk are computed. Defaults to 3*6.
         alpha (float, optional): Risk threshold. Defaults to 0.05.
+        need_load(bool,optional): If True, load the agent via path. If False, the given agent is already loaded.
     Returns:
         (Dict[str,Any]): dictionary summarizing all results of the performance assessment.
     """
 
     ## loading specified config
-    agent = load_trained_agent(agent, agent_config_path).reset()
+    if need_load:
+        agent = load_trained_agent(agent, agent_config_path).reset()
 
     parameter_name, parameter_list = parameter
 
@@ -263,6 +266,7 @@ def across_fixed_policy(
     utility_function: Callable[[pd.DataFrame], float] = cumulative_reward,
     window: int = 3 * 6,  # window to compute iqr and cvar across time
     alpha=0.05,
+    need_load:bool = True
 ) -> Dict[str, Any]:
     """Given an agent initilaized with its environment, the absolute path to the configuration / log we wish to assess,
     loads the correct configuration on the agent. 
@@ -284,12 +288,14 @@ def across_fixed_policy(
         Defaults to cumulative_reward.
         window (int, optional): Time window over which dispersion and risk are computed. Defaults to 3*6.
         alpha (float, optional): Risk threshold. Defaults to 0.05.
+        need_load(bool,optional): If True, load the agent via path. If False, the given agent is already loaded.
 
     Returns:
         (Dict[str,Any]): dictionary summarizing all results of the performance assessment.
     """
 
-    agent = load_trained_agent(agent, agent_config_path)
+    if need_load:
+        agent = load_trained_agent(agent, agent_config_path)
 
     # list to store utility for each run
     utilities_results = []

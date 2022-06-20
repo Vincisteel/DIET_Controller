@@ -221,8 +221,8 @@ class OnOffAgent(Agent):
     def save(self, filename, directory):
         pass
 
-    def load(self, filename, directory):
-        pass
+    def load(self, filename, directory) -> Agent:
+        return self
 
     def log_dict(self) -> Dict[str, Any]:
         return {}
